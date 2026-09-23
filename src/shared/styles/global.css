@@ -75,6 +75,14 @@ button, input, textarea, select { font: inherit; }
 .side-summary { display: grid; gap: 4px; margin: 18px 0; }
 .side-summary strong { margin-bottom: 10px; }
 
+.planning-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
+.planning-form-grid--line { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.planning-form-grid__wide { grid-column: 1 / -1; }
+.planning-line-editor { margin-bottom: 16px; padding: 14px 16px 2px; background: #fafbfc; border: 1px solid #e5e9f0; border-radius: 8px; }
+.planning-line-editor__title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.planning-drawer-form { margin-top: 20px; }
+.order-editor { padding: 20px 24px 24px; }
+
 .document-flow { max-width: 720px; padding: 12px 8px 0; }
 .document-flow__node { display: flex; flex-direction: column; gap: 4px; padding: 0 0 16px 8px; }
 .document-flow__link { margin-right: 8px; padding: 0; font-weight: 600; }

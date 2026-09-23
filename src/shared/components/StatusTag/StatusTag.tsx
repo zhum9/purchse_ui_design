@@ -1,12 +1,14 @@
 import { CheckCircleFilled, ClockCircleFilled, CloseCircleFilled, ExclamationCircleFilled, MinusCircleFilled } from '@ant-design/icons';
 import { Tag } from 'antd';
-import { fulfillmentStatusMeta, receiptStatusMeta, sapStatusMeta, type StatusTone } from '@domain/procurement/meta';
-import type { FulfillmentStatus, ReceiptStatus, SapSyncStatus } from '@domain/procurement/types';
+import { demandStatusMeta, fulfillmentStatusMeta, planStatusMeta, receiptStatusMeta, sapStatusMeta, type StatusTone } from '@domain/procurement/meta';
+import type { FulfillmentStatus, ProcurementDemandStatus, ProcurementPlanStatus, ReceiptStatus, SapSyncStatus } from '@domain/procurement/types';
 
 type StatusTagProps =
   | { domain: 'fulfillment'; value: FulfillmentStatus }
   | { domain: 'receipt'; value: ReceiptStatus }
-  | { domain: 'sap'; value: SapSyncStatus };
+  | { domain: 'sap'; value: SapSyncStatus }
+  | { domain: 'demand'; value: ProcurementDemandStatus }
+  | { domain: 'plan'; value: ProcurementPlanStatus };
 
 const toneConfig: Record<StatusTone, { color: string; icon: React.ReactNode }> = {
   success: { color: 'success', icon: <CheckCircleFilled /> },
@@ -21,7 +23,11 @@ export function StatusTag(props: StatusTagProps) {
     ? fulfillmentStatusMeta[props.value]
     : props.domain === 'receipt'
       ? receiptStatusMeta[props.value]
-      : sapStatusMeta[props.value];
+      : props.domain === 'sap'
+        ? sapStatusMeta[props.value]
+        : props.domain === 'demand'
+          ? demandStatusMeta[props.value]
+          : planStatusMeta[props.value];
   const tone = toneConfig[meta.tone];
   return <Tag color={tone.color} icon={tone.icon}>{meta.label}</Tag>;
 }

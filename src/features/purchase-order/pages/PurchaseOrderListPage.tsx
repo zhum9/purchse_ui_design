@@ -1,4 +1,4 @@
-import { EyeOutlined, SearchOutlined } from '@ant-design/icons';
+import { EditOutlined, EyeOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Empty, Form, Input, Select, Space, Table, Tabs, Typography, type TableColumnsType } from 'antd';
 import { useMemo } from 'react';
@@ -14,7 +14,7 @@ const filters = [
   { key: 'ALL', label: '全部订单' }, { key: 'OPEN', label: '待执行' }, { key: 'PARTIAL', label: '部分执行' },
   { key: 'COMPLETE', label: '执行完成' }, { key: 'EXCEPTION', label: '异常' },
 ];
-const sourceLabels: Record<PurchaseOrder['source'], string> = { CONTRACT: '采购合同', REQUISITION: '采购申请', SOURCING: '寻源结果', DIRECT: '直接采购', EXTERNAL_SAP: 'SAP下发' };
+const sourceLabels: Record<PurchaseOrder['source'], string> = { CONTRACT: '采购合同', REQUISITION: '采购需求', SOURCING: '寻源结果', PLAN: '采购计划', DIRECT: '直接采购', EXTERNAL_SAP: 'SAP下发' };
 
 export function PurchaseOrderListPage() {
   const navigate = useNavigate();
@@ -27,7 +27,7 @@ export function PurchaseOrderListPage() {
     setSearchParams(next);
   };
   const columns: TableColumnsType<PurchaseOrder> = [
-    { title: 'SAP采购订单', dataIndex: 'sapPoNo', width: 150, fixed: 'left', render: (value: string, order) => <div className="primary-cell"><Button type="link" onClick={() => navigate(`/purchase-orders/${order.id}`)}>{value}</Button><span>{order.businessOrderNo}</span></div> },
+    { title: '采购订单', dataIndex: 'sapPoNo', width: 165, fixed: 'left', render: (value: string, order) => <div className="primary-cell"><Button type="link" onClick={() => navigate(`/purchase-orders/${order.id}`)}>{value || order.businessOrderNo}</Button><span>{value ? order.businessOrderNo : 'SAP订单号待同步'}</span></div> },
     { title: '订单来源', dataIndex: 'source', width: 110, render: (value: PurchaseOrder['source']) => sourceLabels[value] },
     { title: '供应商', dataIndex: 'supplier', width: 210, ellipsis: true },
     { title: '采购组织 / 采购组', key: 'org', width: 190, render: (_, order) => <div className="primary-cell"><span>{order.purchaseOrganization}</span><span>{order.purchaseGroup}</span></div> },
@@ -37,11 +37,11 @@ export function PurchaseOrderListPage() {
     { title: '履约状态', key: 'fulfillment', width: 118, render: (_, order) => <StatusTag domain="fulfillment" value={order.status.fulfillmentStatus} /> },
     { title: 'SAP同步状态', key: 'sap', width: 138, render: (_, order) => <StatusTag domain="sap" value={order.status.sapSyncStatus} /> },
     { title: '更新时间', dataIndex: 'updatedAt', width: 155, render: formatDateTime },
-    { title: '操作', key: 'action', width: 90, fixed: 'right', render: (_, order) => <Button type="link" icon={<EyeOutlined />} onClick={() => navigate(`/purchase-orders/${order.id}`)}>查看</Button> },
+    { title: '操作', key: 'action', width: 145, fixed: 'right', render: (_, order) => <Space size={4}><Button type="link" icon={<EyeOutlined />} onClick={() => navigate(`/purchase-orders/${order.id}`)}>查看</Button>{order.source === 'DIRECT' && order.status.documentStatus === 'DRAFT' && <Button type="link" icon={<EditOutlined />} onClick={() => navigate(`/purchase-orders/${order.id}/edit`)}>编辑</Button>}</Space> },
   ];
   if (query.isError) return <PageError onRetry={() => query.refetch()} />;
   return <>
-    <PageHeader title="采购订单" description="统一查看合同、采购申请、寻源、直接采购及 SAP 下发的采购订单。" />
+    <PageHeader title="采购订单" description="统一查看采购计划、合同、寻源、直接采购及 SAP 下发的采购订单。" actions={<Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/purchase-orders/new')}>新建直接采购订单</Button>} />
     <div className="content-surface content-surface--flush">
       <Tabs className="quick-tabs" activeKey={queryParams.status} onChange={(status) => update({ status })} items={filters.map((filter) => ({ key: filter.key, label: filter.label }))} />
       <Form className="search-panel" layout="inline" initialValues={queryParams} onFinish={(values: { keyword?: string; purchaseOrganization?: string }) => update(values)}>

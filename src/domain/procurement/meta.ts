@@ -2,6 +2,8 @@ import type {
   ExecutionEventType,
   ExecutionScenario,
   FulfillmentStatus,
+  ProcurementDemandStatus,
+  ProcurementPlanStatus,
   ReceiptStatus,
   SapSyncStatus,
 } from './types';
@@ -43,6 +45,25 @@ export const sapStatusMeta: Record<SapSyncStatus, { label: string; tone: StatusT
   SUCCESS: { label: 'SAP执行成功', tone: 'success' },
   FAILED: { label: 'SAP执行失败', tone: 'error' },
   UNKNOWN: { label: 'SAP状态待核对', tone: 'warning' },
+};
+
+export const demandStatusMeta: Record<ProcurementDemandStatus, { label: string; tone: StatusTone }> = {
+  DRAFT: { label: '草稿', tone: 'default' },
+  SUBMITTED: { label: '待审批', tone: 'warning' },
+  APPROVED: { label: '待纳入计划', tone: 'processing' },
+  PARTIALLY_PLANNED: { label: '部分纳入计划', tone: 'processing' },
+  PLANNED: { label: '已纳入计划', tone: 'success' },
+  REJECTED: { label: '已驳回', tone: 'error' },
+  CANCELLED: { label: '已取消', tone: 'default' },
+};
+
+export const planStatusMeta: Record<ProcurementPlanStatus, { label: string; tone: StatusTone }> = {
+  DRAFT: { label: '草稿', tone: 'default' },
+  PENDING_APPROVAL: { label: '待审批', tone: 'warning' },
+  APPROVED: { label: '待生成订单', tone: 'processing' },
+  PARTIALLY_ORDERED: { label: '部分生成订单', tone: 'processing' },
+  ORDERED: { label: '已生成订单', tone: 'success' },
+  CANCELLED: { label: '已取消', tone: 'default' },
 };
 
 export const eventTypeMeta: Record<ExecutionEventType, { label: string; tone: StatusTone }> = {

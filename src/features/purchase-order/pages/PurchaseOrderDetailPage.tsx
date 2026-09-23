@@ -1,4 +1,4 @@
-import { ArrowLeftOutlined, FileSearchOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, EditOutlined, FileSearchOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { App, Button, Card, Collapse, Descriptions, Empty, Space, Table, Tabs, Tag, Typography, type TableColumnsType } from 'antd';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -26,6 +26,9 @@ export function PurchaseOrderDetailPage() {
   if (orderQuery.isLoading) return <PageLoading />;
   if (orderQuery.isError || !orderQuery.data) return <PageError onRetry={() => orderQuery.refetch()} />;
   const order = orderQuery.data;
+  const displayOrderNo = order.sapPoNo || order.businessOrderNo;
+  const canEdit = order.source === 'DIRECT' && order.status.documentStatus === 'DRAFT';
+  const canFulfill = order.status.documentStatus === 'ACTIVE' && order.status.approvalStatus !== 'PENDING' && order.status.sapSyncStatus !== 'WAITING';
   const completed = order.items.filter((item) => item.status.fulfillmentStatus === 'COMPLETE').length;
   const exceptions = order.items.filter((item) => ['FAILED', 'UNKNOWN'].includes(item.status.sapSyncStatus) || item.status.fulfillmentStatus === 'OVERDUE').length;
   const showEvent = (event: ExecutionEvent) => modal.info({
@@ -47,22 +50,23 @@ export function PurchaseOrderDetailPage() {
     { title: '已执行', key: 'executed', width: 130, align: 'right', render: (_, item) => item.unit === '元' ? formatMoney(item.executedValue) : formatQuantity(item.executedValue, item.unit) },
     { title: '剩余', key: 'remaining', width: 130, align: 'right', render: (_, item) => item.unit === '元' ? formatMoney(getRemainingValue(item)) : formatQuantity(getRemainingValue(item), item.unit) },
     { title: '状态', key: 'status', width: 118, render: (_, item) => <StatusTag domain="fulfillment" value={item.status.fulfillmentStatus} /> },
-    { title: '操作', key: 'action', width: 110, fixed: 'right', render: (_, item) => <Button type="link" disabled={getRemainingValue(item) === 0} onClick={() => item.executionScenario === 'SERVICE' ? navigate(`/fulfillment/service/${item.id}`) : navigate(`/fulfillment/workbench?keyword=${item.sapPoNo}`)}>{itemAction(item)}</Button> },
+    { title: '操作', key: 'action', width: 110, fixed: 'right', render: (_, item) => <Button type="link" disabled={getRemainingValue(item) === 0 || item.status.sapSyncStatus === 'WAITING' || item.status.approvalStatus === 'PENDING'} onClick={() => item.executionScenario === 'SERVICE' ? navigate(`/fulfillment/service/${item.id}`) : navigate(`/fulfillment/workbench?keyword=${item.sapPoNo}`)}>{itemAction(item)}</Button> },
   ];
   const tabItems = [
     { key: 'basic', label: '基本信息', children: <Card className="business-card"><Descriptions column={3} items={[
-      { key: 'businessNo', label: '业务订单号', children: order.businessOrderNo }, { key: 'source', label: '订单来源', children: order.source }, { key: 'company', label: '公司', children: order.company },
+      { key: 'businessNo', label: '业务订单号', children: order.businessOrderNo }, { key: 'source', label: '订单来源', children: order.source }, { key: 'sourceNo', label: '来源单号', children: order.sourceDocumentNo ?? '-' },
+      { key: 'company', label: '公司', children: order.company },
       { key: 'org', label: '采购组织', children: order.purchaseOrganization }, { key: 'group', label: '采购组', children: order.purchaseGroup }, { key: 'currency', label: '币种', children: '人民币 CNY' },
     ]} /></Card> },
     { key: 'items', label: `订单明细 ${order.items.length}`, children: <Card className="business-card" styles={{ body: { padding: 0 } }}><Table rowKey="id" size="small" columns={columns} dataSource={order.items} pagination={false} scroll={{ x: 1250 }} /></Card> },
     { key: 'records', label: '履约记录', children: <Card className="business-card"><Empty description="履约记录已汇总至单据流，可切换查看完整业务事实链。" image={Empty.PRESENTED_IMAGE_SIMPLE} /></Card> },
     { key: 'flow', label: '单据流', children: <Card title="业务单据流" className="business-card" extra={<Typography.Text type="secondary">点击节点查看业务单据</Typography.Text>}><DocumentFlow events={eventQuery.data ?? []} onSelect={showEvent} /></Card> },
     { key: 'contract', label: '合同', children: <Card className="business-card"><Descriptions items={[{ key: 'contract', label: '关联合同', children: order.source === 'CONTRACT' ? <Button type="link" onClick={() => message.info('合同 CT20260001 的详情入口已触发；合同模块将在后续阶段接入。')}>CT20260001</Button> : '本订单未关联合同（合同并非必经节点）' }]} /></Card> },
-    { key: 'sap', label: 'SAP信息', children: <Card className="business-card"><Descriptions column={2} items={[{ key: 'po', label: 'SAP采购订单', children: order.sapPoNo }, { key: 'status', label: '同步状态', children: <StatusTag domain="sap" value={order.status.sapSyncStatus} /> }]} /><Collapse ghost items={[{ key: 'technical', label: '技术信息（接口运维可见）', children: <Descriptions size="small" column={2} items={[{ key: 'doctype', label: 'Document Type', children: 'NB' }, { key: 'request', label: '最近请求ID', children: 'REQ-PO-20260911-021' }]} /> }]} /></Card> },
+    { key: 'sap', label: 'SAP信息', children: <Card className="business-card"><Descriptions column={2} items={[{ key: 'po', label: 'SAP采购订单', children: order.sapPoNo || '待同步生成' }, { key: 'status', label: '同步状态', children: <StatusTag domain="sap" value={order.status.sapSyncStatus} /> }]} /><Collapse ghost items={[{ key: 'technical', label: '技术信息（接口运维可见）', children: <Descriptions size="small" column={2} items={[{ key: 'doctype', label: 'Document Type', children: 'NB' }, { key: 'request', label: '最近请求ID', children: order.sapPoNo ? 'REQ-PO-20260911-021' : '尚未发送' }]} /> }]} /></Card> },
   ];
   return <>
     <Button className="back-link" type="link" icon={<ArrowLeftOutlined />} onClick={() => navigate('/purchase-orders')}>返回采购订单</Button>
-    <PageHeader title={order.sapPoNo} description={`${order.supplier} · ${order.purchaseOrganization}`} status={<StatusTag domain="fulfillment" value={order.status.fulfillmentStatus} />} actions={<Space><Button icon={<FileSearchOutlined />} onClick={() => setSearchParams({ tab: 'flow' })}>查看单据流</Button><Button type="primary" onClick={() => navigate(`/fulfillment/workbench?keyword=${order.sapPoNo}`)}>继续履约</Button></Space>} />
+    <PageHeader title={displayOrderNo} description={`${order.supplier} · ${order.purchaseOrganization}`} status={<StatusTag domain="fulfillment" value={order.status.fulfillmentStatus} />} actions={<Space><Button icon={<FileSearchOutlined />} onClick={() => setSearchParams({ tab: 'flow' })}>查看单据流</Button>{canEdit && <Button icon={<EditOutlined />} onClick={() => navigate(`/purchase-orders/${order.id}/edit`)}>编辑订单</Button>}<Button type="primary" disabled={!canFulfill} onClick={() => navigate(`/fulfillment/workbench?keyword=${order.sapPoNo || order.businessOrderNo}`)}>{canFulfill ? '继续履约' : '待审批/SAP同步'}</Button></Space>} />
     <MetricStrip items={[{ label: '订单金额', value: formatMoney(order.amount) }, { label: '订单行', value: order.items.length }, { label: '已完成', value: completed, tone: 'success' }, { label: '执行异常', value: exceptions, tone: exceptions ? 'error' : 'default' }]} />
     <Tabs activeKey={searchParams.get('tab') ?? 'items'} onChange={(tab) => setSearchParams({ tab })} items={tabItems} />
   </>;

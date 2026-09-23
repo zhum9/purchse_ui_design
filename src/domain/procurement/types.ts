@@ -32,6 +32,12 @@ export type FulfillmentStatus = 'OPEN' | 'PARTIAL' | 'COMPLETE' | 'BLOCKED' | 'O
 export type ReceiptStatus = 'NOT_RECEIVED' | 'PARTIAL' | 'COMPLETE' | 'REVERSED' | 'RETURNED';
 export type ApprovalStatus = 'NOT_REQUIRED' | 'PENDING' | 'APPROVED' | 'REJECTED';
 export type SapSyncStatus = 'WAITING' | 'PROCESSING' | 'SUCCESS' | 'FAILED' | 'UNKNOWN';
+export type ProcurementDemandStatus = 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'PARTIALLY_PLANNED' | 'PLANNED' | 'REJECTED' | 'CANCELLED';
+export type DemandLineStatus = 'OPEN' | 'PARTIALLY_PLANNED' | 'PLANNED' | 'CANCELLED';
+export type ProcurementPlanStatus = 'DRAFT' | 'PENDING_APPROVAL' | 'APPROVED' | 'PARTIALLY_ORDERED' | 'ORDERED' | 'CANCELLED';
+export type ProcurementPriority = 'URGENT' | 'HIGH' | 'NORMAL' | 'LOW';
+export type ProcurementPlanType = 'CENTRALIZED' | 'FRAME_AGREEMENT' | 'DIRECT';
+export type PurchaseOrderSource = 'CONTRACT' | 'REQUISITION' | 'SOURCING' | 'PLAN' | 'DIRECT' | 'EXTERNAL_SAP';
 
 export interface PurchaseOrderStatus {
   documentStatus: DocumentStatus;
@@ -56,6 +62,7 @@ export interface PurchaseOrderItem {
   materialGroup: string;
   specification?: string;
   orderedValue: number;
+  unitPrice?: number;
   executedValue: number;
   unit: string;
   currency?: 'CNY';
@@ -73,7 +80,9 @@ export interface PurchaseOrder {
   id: string;
   businessOrderNo: string;
   sapPoNo: string;
-  source: 'CONTRACT' | 'REQUISITION' | 'SOURCING' | 'DIRECT' | 'EXTERNAL_SAP';
+  source: PurchaseOrderSource;
+  sourceDocumentNo?: string;
+  planId?: string;
   supplier: string;
   purchaseOrganization: string;
   purchaseGroup: string;
@@ -84,6 +93,91 @@ export interface PurchaseOrder {
   updatedAt: string;
   status: PurchaseOrderStatus;
   items: PurchaseOrderItem[];
+}
+
+export interface ProcurementDemandLine {
+  id: string;
+  demandId: string;
+  lineNo: string;
+  objectType: ProcurementObjectType;
+  content: string;
+  materialCode?: string;
+  materialGroup: string;
+  specification?: string;
+  quantity: number;
+  plannedQuantity: number;
+  unit: string;
+  estimatedUnitPrice: number;
+  estimatedAmount: number;
+  requiredDate: string;
+  plant?: string;
+  status: DemandLineStatus;
+}
+
+export interface ProcurementDemand {
+  id: string;
+  demandNo: string;
+  title: string;
+  department: string;
+  applicant: string;
+  company: string;
+  costCenter?: string;
+  priority: ProcurementPriority;
+  requiredDate: string;
+  estimatedAmount: number;
+  status: ProcurementDemandStatus;
+  approvalStatus: ApprovalStatus;
+  createdAt: string;
+  updatedAt: string;
+  notes?: string;
+  lines: ProcurementDemandLine[];
+}
+
+export interface DemandPoolItem extends ProcurementDemandLine {
+  demandNo: string;
+  demandTitle: string;
+  department: string;
+  applicant: string;
+  priority: ProcurementPriority;
+}
+
+export interface ProcurementPlanLine {
+  id: string;
+  planId: string;
+  lineNo: string;
+  sourceDemandLineIds: string[];
+  sourceDemandNos: string[];
+  objectType: ProcurementObjectType;
+  content: string;
+  materialCode?: string;
+  materialGroup: string;
+  specification?: string;
+  plannedQuantity: number;
+  orderedQuantity: number;
+  unit: string;
+  estimatedUnitPrice: number;
+  estimatedAmount: number;
+  requiredDate: string;
+  plant?: string;
+}
+
+export interface ProcurementPlan {
+  id: string;
+  planNo: string;
+  name: string;
+  type: ProcurementPlanType;
+  purchaseOrganization: string;
+  purchaseGroup: string;
+  company: string;
+  owner: string;
+  plannedOrderDate: string;
+  estimatedAmount: number;
+  status: ProcurementPlanStatus;
+  approvalStatus: ApprovalStatus;
+  createdAt: string;
+  updatedAt: string;
+  notes?: string;
+  lines: ProcurementPlanLine[];
 }
 
 export type ExecutionEventType =
