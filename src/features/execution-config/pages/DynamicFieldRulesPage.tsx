@@ -146,23 +146,27 @@ export function DynamicFieldRulesPage() {
 
   const saveRule = async () => {
     const values = await form.validateFields();
+    const currentEditingRule = editingRule;
+    if (!currentEditingRule) {
+      return;
+    }
     const id = `${values.scenario}-${values.key.trim()}`;
-    if (editingRule === 'NEW' && rules.some((rule) => rule.id === id)) {
+    if (currentEditingRule === 'NEW' && rules.some((rule) => rule.id === id)) {
       message.error('该场景下已存在相同字段编码。');
       return;
     }
     const nextRule: FieldRuleRow = {
       ...values,
-      id: editingRule === 'NEW' ? id : editingRule.id,
+      id: currentEditingRule === 'NEW' ? id : currentEditingRule.id,
       key: values.key.trim(),
       label: values.label.trim(),
       ruleNote: values.businessHelp?.trim() || '按字段状态直接生效',
     };
-    setRules((current) => editingRule === 'NEW'
+    setRules((current) => currentEditingRule === 'NEW'
       ? [nextRule, ...current]
-      : current.map((rule) => (rule.id === editingRule.id ? nextRule : rule)));
+      : current.map((rule) => (rule.id === currentEditingRule.id ? nextRule : rule)));
     closeEditor();
-    message.success(editingRule === 'NEW' ? '字段规则已新增。' : '字段规则已更新。');
+    message.success(currentEditingRule === 'NEW' ? '字段规则已新增。' : '字段规则已更新。');
   };
 
   const resetFilters = () => {
