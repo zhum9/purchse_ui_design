@@ -42,3 +42,16 @@ src/
 ```
 
 业务边界与 UI 规范以根目录 `AGENTS.md`、`docs/FRONTEND_ARCHITECTURE.md`、产品设计文档及 `skills/procurement-frontend-skills/` 为准。
+
+## GitHub Pages 原型发布
+
+项目通过 `.github/workflows/deploy-pages.yml` 自动发布。推送到 `main` 后，GitHub Actions 会构建静态资源并部署到 GitHub Pages；线上原型启用 MSW Mock，不依赖后端服务。
+
+首次使用时需要在 GitHub 仓库完成一次设置：
+
+1. 打开 `Settings → Pages`。
+2. 将 `Build and deployment → Source` 设置为 `GitHub Actions`。
+3. 在 Pages 设置中填写自有域名并启用 HTTPS。
+4. 在域名 DNS 控制台按 GitHub 提示配置记录。
+
+前端使用 Hash Router，因此 GitHub Pages 上直接刷新详情页不会返回 404。部署构建使用相对资源路径，可同时兼容仓库默认 Pages 地址和自有域名。

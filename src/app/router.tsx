@@ -1,9 +1,9 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createHashRouter, Navigate } from 'react-router-dom';
 import { AppLayout } from '@layouts/AppLayout';
 import { Result } from 'antd';
 import { PageLoading } from '@shared/components/PageState';
 
-export const router = createBrowserRouter([
+export const router = createHashRouter([
   {
     path: '/', element: <AppLayout />, HydrateFallback: PageLoading, children: [
       { index: true, element: <Navigate to="/fulfillment/workbench" replace /> },

@@ -4,9 +4,10 @@ import { purchaseOrderItems, purchaseOrders } from '../fixtures/purchaseOrders';
 import { sapExecutions } from '../fixtures/sapExecutions';
 
 const ok = <T,>(data: T) => HttpResponse.json({ success: true, data });
+const apiPath = (path: string) => `*${path}`;
 
 export const handlers = [
-  http.get('/api/purchase-orders', async ({ request }) => {
+  http.get(apiPath('/api/purchase-orders'), async ({ request }) => {
     await delay(280);
     const url = new URL(request.url);
     const keyword = url.searchParams.get('keyword')?.toLowerCase() ?? '';
@@ -20,12 +21,12 @@ export const handlers = [
     });
     return ok({ items, page: 1, pageSize: 20, total: items.length });
   }),
-  http.get('/api/purchase-orders/:id', async ({ params }) => {
+  http.get(apiPath('/api/purchase-orders/:id'), async ({ params }) => {
     await delay(220);
     const order = purchaseOrders.find((item) => item.id === params.id);
     return order ? ok(order) : HttpResponse.json({ success: false, data: null, message: '未找到采购订单。' }, { status: 404 });
   }),
-  http.get('/api/fulfillment/items', async ({ request }) => {
+  http.get(apiPath('/api/fulfillment/items'), async ({ request }) => {
     await delay(320);
     const url = new URL(request.url);
     const keyword = url.searchParams.get('keyword')?.toLowerCase() ?? '';
@@ -42,20 +43,20 @@ export const handlers = [
     });
     return ok({ items, page: 1, pageSize: 20, total: items.length });
   }),
-  http.get('/api/execution-events', async ({ request }) => {
+  http.get(apiPath('/api/execution-events'), async ({ request }) => {
     await delay(180);
     const poId = new URL(request.url).searchParams.get('poId');
     return ok(poId ? executionEvents.filter((event) => event.poId === poId) : executionEvents);
   }),
-  http.get('/api/sap/executions', async () => {
+  http.get(apiPath('/api/sap/executions'), async () => {
     await delay(260);
     return ok({ items: sapExecutions, page: 1, pageSize: 20, total: sapExecutions.length });
   }),
-  http.post('/api/executions', async () => {
+  http.post(apiPath('/api/executions'), async () => {
     await delay(650);
     return ok({ businessDocumentNo: `EX${Date.now()}`, sapStatus: 'PROCESSING' });
   }),
-  http.post('/api/sap/executions/:id/reconcile', async ({ params }) => {
+  http.post(apiPath('/api/sap/executions/:id/reconcile'), async ({ params }) => {
     await delay(700);
     return ok({ id: params.id, status: 'SUCCESS', sapDocumentNo: '5000123999' });
   }),

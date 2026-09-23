@@ -5,9 +5,13 @@ import { AppProviders } from '@app/providers';
 import '@shared/styles/global.css';
 
 async function enableMocking() {
-  if (!import.meta.env.DEV) return;
+  const shouldEnableMocking = import.meta.env.DEV || import.meta.env.VITE_ENABLE_MOCKS === 'true';
+  if (!shouldEnableMocking) return;
   const { worker } = await import('@mocks/browser');
-  await worker.start({ onUnhandledRequest: 'bypass' });
+  await worker.start({
+    onUnhandledRequest: 'bypass',
+    serviceWorker: { url: `${import.meta.env.BASE_URL}mockServiceWorker.js` },
+  });
 }
 
 enableMocking().then(() => {

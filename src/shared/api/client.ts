@@ -7,7 +7,8 @@ export class AppApiError extends Error {
 }
 
 export async function apiClient<T>(url: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(url, {
+  const requestUrl = url.startsWith('/') ? `${import.meta.env.BASE_URL}${url.slice(1)}` : url;
+  const response = await fetch(requestUrl, {
     ...init,
     headers: { 'Content-Type': 'application/json', ...init?.headers },
   });
