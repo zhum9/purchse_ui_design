@@ -1,6 +1,6 @@
 import { ArrowLeftOutlined, CheckOutlined, ShoppingCartOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert, App, Button, Card, DatePicker, Descriptions, Drawer, Form, Input, Space, Table, Tabs, Tag, Typography, type TableColumnsType } from 'antd';
+import { Alert, App, AutoComplete, Button, Card, DatePicker, Descriptions, Drawer, Form, Input, Space, Table, Tabs, Tag, Typography, type TableColumnsType } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useMemo, useState, type Key } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -32,11 +32,15 @@ export function ProcurementPlanDetailPage() {
   const orderMutation = useMutation({ mutationFn: (values: OrderFormValues) => createPurchaseOrderFromPlan(id, { ...values, orderDate: values.orderDate.format('YYYY-MM-DD'), planLineIds: selectedRowKeys.map(String) }) });
   const plan = query.data;
   const availableLines = useMemo(() => plan?.lines.filter((line) => line.orderedQuantity < line.plannedQuantity) ?? [], [plan]);
+  const suggestedSupplierOptions = useMemo(() => [...new Set(availableLines
+    .filter((line) => selectedRowKeys.includes(line.id))
+    .flatMap((line) => line.suggestedSuppliers))].map((value) => ({ value })), [availableLines, selectedRowKeys]);
   const remainingAmount = availableLines.reduce((sum, line) => sum + ((line.plannedQuantity - line.orderedQuantity) * line.estimatedUnitPrice), 0);
   const columns: TableColumnsType<ProcurementPlanLine> = [
     { title: '行', dataIndex: 'lineNo', width: 70, fixed: 'left' },
     { title: '采购内容', key: 'content', width: 250, render: (_, line) => <div className="primary-cell"><strong>{line.content}</strong><span>{line.materialCode ?? line.materialGroup}</span></div> },
     { title: '来源需求', dataIndex: 'sourceDemandNos', width: 170, render: (values: string[]) => <Space size={[4, 4]} wrap>{values.map((value) => <Tag key={value}>{value}</Tag>)}</Space> },
+    { title: '建议供应商', dataIndex: 'suggestedSuppliers', width: 210, render: (values: string[]) => values.length ? <Space size={[4, 4]} wrap>{values.map((value) => <Tag key={value}>{value}</Tag>)}</Space> : '-' },
     { title: '计划数量', key: 'planned', width: 125, align: 'right', render: (_, line) => formatQuantity(line.plannedQuantity, line.unit) },
     { title: '已转订单', key: 'ordered', width: 125, align: 'right', render: (_, line) => formatQuantity(line.orderedQuantity, line.unit) },
     { title: '待转订单', key: 'remaining', width: 125, align: 'right', render: (_, line) => <Typography.Text strong>{formatQuantity(line.plannedQuantity - line.orderedQuantity, line.unit)}</Typography.Text> },
@@ -67,7 +71,7 @@ export function ProcurementPlanDetailPage() {
     <PageHeader title={plan.planNo} description={`${plan.name} · ${plan.purchaseOrganization}`} status={<StatusTag domain="plan" value={plan.status} />} actions={actions} />
     <MetricStrip items={[{ label: '计划预估金额', value: formatMoney(plan.estimatedAmount) }, { label: '计划明细', value: plan.lines.length }, { label: '待转订单明细', value: availableLines.length, tone: availableLines.length ? 'warning' : 'success' }, { label: '待转订单金额', value: formatMoney(remainingAmount) }]} />
     <Tabs defaultActiveKey="lines" items={[
-      { key: 'lines', label: `计划明细 ${plan.lines.length}`, children: <Card className="business-card" styles={{ body: { padding: 0 } }}><Table rowKey="id" size="small" columns={columns} dataSource={plan.lines} pagination={false} scroll={{ x: 1220 }} /></Card> },
+      { key: 'lines', label: `计划明细 ${plan.lines.length}`, children: <Card className="business-card" styles={{ body: { padding: 0 } }}><Table rowKey="id" size="small" columns={columns} dataSource={plan.lines} pagination={false} scroll={{ x: 1430 }} /></Card> },
       { key: 'basic', label: '基本信息', children: <Card className="business-card"><Descriptions column={3} items={[
         { key: 'org', label: '采购组织', children: plan.purchaseOrganization }, { key: 'group', label: '采购组', children: plan.purchaseGroup }, { key: 'owner', label: '负责人', children: plan.owner },
         { key: 'date', label: '计划下单日期', children: plan.plannedOrderDate }, { key: 'company', label: '公司', children: plan.company }, { key: 'approval', label: '审批状态', children: plan.approvalStatus === 'APPROVED' ? '已审批' : '待审批' },
@@ -75,17 +79,17 @@ export function ProcurementPlanDetailPage() {
       ]} /></Card> },
     ]} />
     <Drawer title="由采购计划生成采购订单" width={820} open={drawerOpen} onClose={() => setDrawerOpen(false)} extra={<Button type="primary" loading={orderMutation.isPending} disabled={!selectedRowKeys.length} onClick={createOrder}>确认生成</Button>}>
-      <Alert showIcon type="info" message={`来源计划 ${plan.planNo}`} description="订单将保留计划及原始需求追溯关系；SAP订单号由后续同步回写。" />
+      <Alert showIcon type="info" message={`来源计划 ${plan.planNo}`} description="订单将保留计划及原始需求追溯关系。建议供应商仅作候选，可以选择其他供应商。" />
       <Form className="planning-drawer-form" form={form} layout="vertical">
         <div className="planning-form-grid">
-          <Form.Item className="planning-form-grid__wide" name="supplier" label="供应商" rules={[{ required: true, message: '请选择或填写供应商。' }]}><Input placeholder="输入供应商全称" /></Form.Item>
+          <Form.Item className="planning-form-grid__wide" name="supplier" label="供应商" extra="可从需求建议供应商中选择，也可录入其他供应商。" rules={[{ required: true, message: '请选择或填写供应商。' }]}><AutoComplete options={suggestedSupplierOptions} placeholder="选择建议供应商或输入其他供应商" filterOption={(input, option) => (option?.value ?? '').toLowerCase().includes(input.toLowerCase())} /></Form.Item>
           <Form.Item name="company" label="公司" rules={[{ required: true }]}><Input /></Form.Item>
           <Form.Item name="purchaseGroup" label="采购组" rules={[{ required: true }]}><Input /></Form.Item>
           <Form.Item name="orderDate" label="订单日期" rules={[{ required: true }]}><DatePicker className="field-full" /></Form.Item>
         </div>
       </Form>
       <Typography.Title level={5}>选择计划明细</Typography.Title>
-      <Table rowKey="id" size="small" rowSelection={{ selectedRowKeys, onChange: setSelectedRowKeys }} columns={columns.slice(0, 6)} dataSource={availableLines} pagination={false} scroll={{ x: 900 }} />
+      <Table rowKey="id" size="small" rowSelection={{ selectedRowKeys, onChange: setSelectedRowKeys }} columns={columns.slice(0, 7)} dataSource={availableLines} pagination={false} scroll={{ x: 1120 }} />
     </Drawer>
   </>;
 }

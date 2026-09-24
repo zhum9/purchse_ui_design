@@ -24,6 +24,7 @@ export interface DemandLineInput {
   content: string;
   materialCode?: string;
   materialGroup: string;
+  suggestedSupplier?: string;
   specification?: string;
   quantity: number;
   unit: string;

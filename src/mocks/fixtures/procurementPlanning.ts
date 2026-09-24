@@ -8,7 +8,7 @@ export const procurementDemands: ProcurementDemand[] = [
     notes: '覆盖沈阳工厂第四季度生产计划，允许分批到货。',
     lines: [{
       id: 'DEM-001-10', demandId: 'DEM-001', lineNo: '0010', objectType: 'MATERIAL', content: '一级玉米', materialCode: 'MAT00001',
-      materialGroup: '原粮', specification: '国标一级，水分≤14.5%', quantity: 2500, plannedQuantity: 1000, unit: '吨',
+      materialGroup: '原粮', suggestedSupplier: '辽宁丰禾粮食有限公司', specification: '国标一级，水分≤14.5%', quantity: 2500, plannedQuantity: 1000, unit: '吨',
       estimatedUnitPrice: 2500, estimatedAmount: 6250000, requiredDate: '2026-10-15', plant: '沈阳工厂（1000）', status: 'PARTIALLY_PLANNED',
     }],
   },
@@ -19,7 +19,7 @@ export const procurementDemands: ProcurementDemand[] = [
     lines: [
       {
         id: 'DEM-002-10', demandId: 'DEM-002', lineNo: '0010', objectType: 'MATERIAL', content: '食品级复合包装袋', materialCode: 'MAT00326',
-        materialGroup: '包装材料', specification: '50kg/袋', quantity: 60000, plannedQuantity: 0, unit: '件', estimatedUnitPrice: 8.5,
+        materialGroup: '包装材料', suggestedSupplier: '中粮包装科技有限公司', specification: '50kg/袋', quantity: 60000, plannedQuantity: 0, unit: '件', estimatedUnitPrice: 8.5,
         estimatedAmount: 510000, requiredDate: '2026-10-08', plant: '大连工厂（1200）', status: 'OPEN',
       },
       {
@@ -37,12 +37,12 @@ export const procurementDemands: ProcurementDemand[] = [
     lines: [
       {
         id: 'DEM-003-10', demandId: 'DEM-003', lineNo: '0010', objectType: 'MATERIAL', content: '输送线驱动电机', materialCode: 'MAT00881',
-        materialGroup: '机械备件', specification: 'YE4-160M-4', quantity: 6, plannedQuantity: 0, unit: '台', estimatedUnitPrice: 14000,
+        materialGroup: '机械备件', suggestedSupplier: '精工自动化设备有限公司', specification: 'YE4-160M-4', quantity: 6, plannedQuantity: 0, unit: '台', estimatedUnitPrice: 14000,
         estimatedAmount: 84000, requiredDate: '2026-09-30', plant: '沈阳工厂（1000）', status: 'OPEN',
       },
       {
         id: 'DEM-003-20', demandId: 'DEM-003', lineNo: '0020', objectType: 'SERVICE', content: '输送系统现场检修服务',
-        materialGroup: '维修服务', specification: '含拆装、调试及72小时运行验证', quantity: 1, plannedQuantity: 0, unit: '项', estimatedUnitPrice: 114000,
+        materialGroup: '维修服务', suggestedSupplier: '北方机电维修服务有限公司', specification: '含拆装、调试及72小时运行验证', quantity: 1, plannedQuantity: 0, unit: '项', estimatedUnitPrice: 114000,
         estimatedAmount: 114000, requiredDate: '2026-10-05', plant: '沈阳工厂（1000）', status: 'OPEN',
       },
     ],
@@ -53,7 +53,7 @@ export const procurementDemands: ProcurementDemand[] = [
     status: 'APPROVED', approvalStatus: 'APPROVED', createdAt: '2026-09-18T10:30:00', updatedAt: '2026-09-22T16:42:00',
     lines: [{
       id: 'DEM-004-10', demandId: 'DEM-004', lineNo: '0010', objectType: 'SERVICE', content: 'SAP系统年度运维服务',
-      materialGroup: 'IT服务', specification: '覆盖MM、FI/CO、接口平台及7×24应急支持', quantity: 12, plannedQuantity: 0, unit: '月',
+      materialGroup: 'IT服务', suggestedSupplier: '华信数智科技有限公司', specification: '覆盖MM、FI/CO、接口平台及7×24应急支持', quantity: 12, plannedQuantity: 0, unit: '月',
       estimatedUnitPrice: 115000, estimatedAmount: 1380000, requiredDate: '2026-12-20', status: 'OPEN',
     }],
   },
@@ -63,7 +63,7 @@ export const procurementDemands: ProcurementDemand[] = [
     status: 'DRAFT', approvalStatus: 'PENDING', createdAt: '2026-09-22T09:05:00', updatedAt: '2026-09-22T09:05:00',
     lines: [{
       id: 'DEM-005-10', demandId: 'DEM-005', lineNo: '0010', objectType: 'SERVICE', content: '仓储设备年度安全检测',
-      materialGroup: '检测服务', specification: '覆盖三个粮库及两条输送线', quantity: 1, plannedQuantity: 0, unit: '项',
+      materialGroup: '检测服务', suggestedSupplier: '安衡检测认证有限公司', specification: '覆盖三个粮库及两条输送线', quantity: 1, plannedQuantity: 0, unit: '项',
       estimatedUnitPrice: 220000, estimatedAmount: 220000, requiredDate: '2027-01-15', status: 'OPEN',
     }],
   },
@@ -77,7 +77,7 @@ export const procurementPlans: ProcurementPlan[] = [
     notes: '首批1000吨已形成订单，其余需求后续滚动纳入计划。',
     lines: [{
       id: 'PLAN-001-10', planId: 'PLAN-001', lineNo: '0010', sourceDemandLineIds: ['DEM-001-10'], sourceDemandNos: ['PR20260910001'],
-      objectType: 'MATERIAL', content: '一级玉米', materialCode: 'MAT00001', materialGroup: '原粮', specification: '国标一级，水分≤14.5%',
+      objectType: 'MATERIAL', content: '一级玉米', materialCode: 'MAT00001', materialGroup: '原粮', suggestedSuppliers: ['辽宁丰禾粮食有限公司'], specification: '国标一级，水分≤14.5%',
       plannedQuantity: 1000, orderedQuantity: 1000, unit: '吨', estimatedUnitPrice: 2500, estimatedAmount: 2500000,
       requiredDate: '2026-10-15', plant: '沈阳工厂（1000）',
     }],
@@ -88,7 +88,7 @@ export const procurementPlans: ProcurementPlan[] = [
     status: 'APPROVED', approvalStatus: 'APPROVED', createdAt: '2026-09-22T16:45:00', updatedAt: '2026-09-23T08:20:00',
     lines: [{
       id: 'PLAN-002-10', planId: 'PLAN-002', lineNo: '0010', sourceDemandLineIds: ['DEM-004-10'], sourceDemandNos: ['PR20260918009'],
-      objectType: 'SERVICE', content: 'SAP系统年度运维服务', materialGroup: 'IT服务', specification: '覆盖MM、FI/CO、接口平台及7×24应急支持',
+      objectType: 'SERVICE', content: 'SAP系统年度运维服务', materialGroup: 'IT服务', suggestedSuppliers: ['华信数智科技有限公司'], specification: '覆盖MM、FI/CO、接口平台及7×24应急支持',
       plannedQuantity: 12, orderedQuantity: 0, unit: '月', estimatedUnitPrice: 115000, estimatedAmount: 1380000, requiredDate: '2026-12-20',
     }],
   },
@@ -99,12 +99,12 @@ export const procurementPlans: ProcurementPlan[] = [
     lines: [
       {
         id: 'PLAN-003-10', planId: 'PLAN-003', lineNo: '0010', sourceDemandLineIds: ['DEM-002-10'], sourceDemandNos: ['PR20260912006'],
-        objectType: 'MATERIAL', content: '食品级复合包装袋', materialCode: 'MAT00326', materialGroup: '包装材料', specification: '50kg/袋',
+        objectType: 'MATERIAL', content: '食品级复合包装袋', materialCode: 'MAT00326', materialGroup: '包装材料', suggestedSuppliers: ['中粮包装科技有限公司'], specification: '50kg/袋',
         plannedQuantity: 60000, orderedQuantity: 0, unit: '件', estimatedUnitPrice: 8.5, estimatedAmount: 510000, requiredDate: '2026-10-08', plant: '大连工厂（1200）',
       },
       {
         id: 'PLAN-003-20', planId: 'PLAN-003', lineNo: '0020', sourceDemandLineIds: ['DEM-002-20'], sourceDemandNos: ['PR20260912006'],
-        objectType: 'FREE_TEXT', content: '包装线标签及色带', materialGroup: '包装耗材', specification: '按生产批次配套供货',
+        objectType: 'FREE_TEXT', content: '包装线标签及色带', materialGroup: '包装耗材', suggestedSuppliers: [], specification: '按生产批次配套供货',
         plannedQuantity: 20, orderedQuantity: 0, unit: '批', estimatedUnitPrice: 8500, estimatedAmount: 170000, requiredDate: '2026-10-10', plant: '大连工厂（1200）',
       },
     ],

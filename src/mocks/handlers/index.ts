@@ -124,11 +124,12 @@ export const handlers = [
         existing.estimatedAmount += remaining * item.estimatedUnitPrice;
         existing.sourceDemandLineIds.push(item.id);
         if (!existing.sourceDemandNos.includes(item.demandNo)) existing.sourceDemandNos.push(item.demandNo);
+        if (item.suggestedSupplier && !existing.suggestedSuppliers.includes(item.suggestedSupplier)) existing.suggestedSuppliers.push(item.suggestedSupplier);
       } else {
         grouped.set(key, {
           id: `${id}-${String((grouped.size + 1) * 10).padStart(2, '0')}`, planId: id, lineNo: String((grouped.size + 1) * 10).padStart(4, '0'),
           sourceDemandLineIds: [item.id], sourceDemandNos: [item.demandNo], objectType: item.objectType, content: item.content,
-          materialCode: item.materialCode, materialGroup: item.materialGroup, specification: item.specification, plannedQuantity: remaining,
+          materialCode: item.materialCode, materialGroup: item.materialGroup, suggestedSuppliers: item.suggestedSupplier ? [item.suggestedSupplier] : [], specification: item.specification, plannedQuantity: remaining,
           orderedQuantity: 0, unit: item.unit, estimatedUnitPrice: item.estimatedUnitPrice, estimatedAmount: remaining * item.estimatedUnitPrice,
           requiredDate: item.requiredDate, plant: item.plant,
         });

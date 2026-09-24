@@ -103,6 +103,7 @@ export interface ProcurementDemandLine {
   content: string;
   materialCode?: string;
   materialGroup: string;
+  suggestedSupplier?: string;
   specification?: string;
   quantity: number;
   plannedQuantity: number;
@@ -151,6 +152,7 @@ export interface ProcurementPlanLine {
   content: string;
   materialCode?: string;
   materialGroup: string;
+  suggestedSuppliers: string[];
   specification?: string;
   plannedQuantity: number;
   orderedQuantity: number;

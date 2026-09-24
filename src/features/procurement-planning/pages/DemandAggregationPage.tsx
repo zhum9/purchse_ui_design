@@ -60,6 +60,7 @@ export function DemandAggregationPage() {
   const columns: TableColumnsType<DemandPoolItem> = [
     { title: '需求来源', key: 'source', width: 190, fixed: 'left', render: (_, item) => <div className="primary-cell"><strong>{item.demandNo}</strong><span>{item.demandTitle}</span></div> },
     { title: '需求内容', key: 'content', width: 240, render: (_, item) => <div className="primary-cell"><span>{item.content}</span><span>{item.materialCode ?? item.materialGroup}</span></div> },
+    { title: '建议供应商', dataIndex: 'suggestedSupplier', width: 190, ellipsis: true, render: (value?: string) => value ?? '-' },
     { title: '类型', dataIndex: 'objectType', width: 110, render: (value: DemandPoolItem['objectType']) => <Tag>{objectLabels[value]}</Tag> },
     { title: '需求部门', dataIndex: 'department', width: 130 },
     { title: '需求数量', key: 'quantity', width: 125, align: 'right', render: (_, item) => formatQuantity(item.quantity, item.unit) },
@@ -79,7 +80,7 @@ export function DemandAggregationPage() {
         <Form.Item><Button type="primary" htmlType="submit">查询</Button></Form.Item><Form.Item><Button onClick={() => setSearchParams({})}>重置</Button></Form.Item>
       </Form>
       <Space className="table-toolbar"><Typography.Text strong>已审批需求明细</Typography.Text><Typography.Text type="secondary">选中后可自动合并相同采购对象</Typography.Text></Space>
-      <Table rowKey="id" size="small" loading={query.isLoading} rowSelection={{ selectedRowKeys, onChange: setSelectedRowKeys }} columns={columns} dataSource={query.data?.items} scroll={{ x: 1320 }} pagination={false} locale={{ emptyText: <Empty description="当前没有可汇总的已审批需求。" /> }} />
+      <Table rowKey="id" size="small" loading={query.isLoading} rowSelection={{ selectedRowKeys, onChange: setSelectedRowKeys }} columns={columns} dataSource={query.data?.items} scroll={{ x: 1510 }} pagination={false} locale={{ emptyText: <Empty description="当前没有可汇总的已审批需求。" /> }} />
     </div>
     <Drawer title="形成采购计划" width={760} open={drawerOpen} onClose={() => setDrawerOpen(false)} extra={<Button type="primary" loading={mutation.isPending} onClick={createPlan}>创建计划</Button>}>
       <Alert type="info" showIcon message={`已选 ${selectedItems.length} 条需求明细，预估金额 ${formatMoney(totalAmount)}`} description="系统将合并采购对象、单位和工厂相同的需求，并保留每条需求来源。" />

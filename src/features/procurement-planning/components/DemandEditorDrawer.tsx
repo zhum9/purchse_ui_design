@@ -118,6 +118,7 @@ export function DemandEditorDrawer({ open, mode, demand, onClose, onSaved }: Dem
                 {({ getFieldValue }) => getFieldValue(['lines', index, 'objectType']) === 'MATERIAL' && <Form.Item name={[field.name, 'materialCode']} label="物料号"><Input /></Form.Item>}
               </Form.Item>
               <Form.Item name={[field.name, 'materialGroup']} label="物料组" rules={[{ required: true }]}><Input /></Form.Item>
+              <Form.Item name={[field.name, 'suggestedSupplier']} label="建议供应商" extra="非必填，仅作为后续采购计划和订单建议。"><Input allowClear placeholder="可填写建议供应商全称" /></Form.Item>
               <Form.Item className="planning-form-grid__wide" name={[field.name, 'specification']} label="规格/服务要求"><Input /></Form.Item>
               <Form.Item name={[field.name, 'quantity']} label="需求数量" rules={[{ required: true }]}><InputNumber className="field-full" min={0.01} precision={2} /></Form.Item>
               <Form.Item name={[field.name, 'unit']} label="单位" rules={[{ required: true }]}><Select showSearch options={['吨','件','批','台','项','月','元'].map((value) => ({ value, label: value }))} /></Form.Item>
