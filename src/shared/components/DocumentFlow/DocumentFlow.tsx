@@ -1,4 +1,4 @@
-import { CheckCircleOutlined, RetweetOutlined, RollbackOutlined, ShoppingCartOutlined } from '@ant-design/icons';
+import { CheckCircleOutlined, RetweetOutlined, RollbackOutlined, ShoppingCartOutlined, ToolOutlined } from '@ant-design/icons';
 import { Button, Empty, Timeline, Typography } from 'antd';
 import { eventTypeMeta } from '@domain/procurement/meta';
 import type { ExecutionEvent } from '@domain/procurement/types';
@@ -7,7 +7,8 @@ import { formatDateTime, formatMoney, formatQuantity } from '@shared/utils/forma
 const eventIcons = {
   GOODS_RECEIPT: <ShoppingCartOutlined />,
   SERVICE_ACCEPTANCE: <CheckCircleOutlined />,
-  AMOUNT_CONFIRMATION: <CheckCircleOutlined />,
+  SERVICE_REVERSAL: <ToolOutlined />,
+  LIMIT_CONFIRMATION: <CheckCircleOutlined />,
   GR_REVERSAL: <RollbackOutlined />,
   PURCHASE_RETURN: <RetweetOutlined />,
   RETURN_REVERSAL: <RollbackOutlined />,

@@ -1,211 +1,60 @@
-import { CheckCircleFilled, PlusOutlined, SaveOutlined } from '@ant-design/icons';
-import {
-  App,
-  Button,
-  Card,
-  Checkbox,
-  Col,
-  Descriptions,
-  Flex,
-  Form,
-  Input,
-  Radio,
-  Row,
-  Select,
-  Space,
-  Switch,
-  Tabs,
-  Typography,
-} from 'antd';
+import { CheckCircleFilled } from '@ant-design/icons';
+import { Alert, Card, Col, Descriptions, Row, Tabs, Tag, Typography } from 'antd';
 import { useState } from 'react';
 import { scenarioMeta } from '@domain/procurement/meta';
 import type { ExecutionScenario } from '@domain/procurement/types';
 import { PageHeader } from '@shared/components/PageHeader';
 
-interface ScenarioConfig {
+interface ScenarioDefinition {
   code: ExecutionScenario;
-  mode: string;
+  control: string;
   action: string;
-  enabled: boolean;
+  recognition: string;
+  source: string;
 }
 
-const initialScenarios: ScenarioConfig[] = [
-  { code: 'MAT_STOCK', mode: '数量 + 金额', action: '采购收货', enabled: true },
-  { code: 'MAT_FREE', mode: '数量', action: '采购收货', enabled: true },
-  { code: 'SERVICE', mode: '金额', action: '服务验收', enabled: true },
-  { code: 'SERVICE_LIMIT', mode: '额度', action: '执行确认', enabled: true },
-];
-
-const modeOptions = ['数量 + 金额', '数量', '金额', '额度'].map((value) => ({ value, label: value }));
-const actionOptions = ['采购收货', '服务验收', '执行确认'].map((value) => ({ value, label: value }));
-const operationOptions = [
-  { value: 'PARTIAL', label: '允许部分执行' },
-  { value: 'RETURN', label: '允许采购退货' },
-  { value: 'REVERSAL', label: '允许冲销' },
+const scenarios: ScenarioDefinition[] = [
+  { code: 'MAT_STOCK', control: '数量与库存', action: '采购收货', recognition: '有物料主数据；订单行要求库存管理', source: 'SAP订单行与已发布的场景识别规则' },
+  { code: 'MAT_CONSUME', control: '数量与费用归属', action: '采购收货', recognition: '有物料主数据；订单行按消耗性采购执行', source: 'SAP订单行与已发布的场景识别规则' },
+  { code: 'MAT_FREE', control: '数量', action: '采购收货', recognition: '无物料号的货物采购行', source: 'SAP订单行与已发布的场景识别规则' },
+  { code: 'SERVICE', control: '服务数量与验收金额', action: '服务验收', recognition: '服务采购行，非限额控制', source: 'SAP订单行与已发布的场景识别规则' },
+  { code: 'SERVICE_LIMIT', control: '预计金额与最高限额', action: '限额服务执行确认', recognition: '服务采购行，订单行设置最高限额', source: 'SAP订单行与已发布的场景识别规则' },
 ];
 
 export function ExecutionConfigPage() {
-  const { message } = App.useApp();
-  const [scenarioList, setScenarioList] = useState(initialScenarios);
   const [selected, setSelected] = useState<ExecutionScenario>('MAT_STOCK');
-  const [allowedOperations, setAllowedOperations] = useState<Partial<Record<ExecutionScenario, string[]>>>({});
-  const [conditionCounts, setConditionCounts] = useState<Partial<Record<ExecutionScenario, number>>>({});
-
-  const scenario = scenarioList.find((item) => item.code === selected) ?? scenarioList[0];
-  const selectedOperations = allowedOperations[selected] ?? ['PARTIAL', 'RETURN', 'REVERSAL'];
-  const conditionCount = conditionCounts[selected] ?? 2;
-
-  const updateScenario = (patch: Partial<ScenarioConfig>) => {
-    setScenarioList((current) => current.map((item) => (item.code === selected ? { ...item, ...patch } : item)));
-  };
-
-  const addScenario = () => {
-    const existing = scenarioList.find((item) => item.code === 'OTHER');
-    if (existing) {
-      setSelected(existing.code);
-      message.info('已定位到“其他”扩展场景。');
-      return;
-    }
-    setScenarioList((current) => [
-      ...current,
-      { code: 'OTHER', mode: '数量', action: '执行确认', enabled: false },
-    ]);
-    setSelected('OTHER');
-    message.success('已新增扩展场景，请继续完善识别条件。');
-  };
-
-  const recognitionItems = [
-    { key: 'condition1', label: '条件 1', children: 'Material 存在' },
-    {
-      key: 'condition2',
-      label: '条件 2',
-      children: selected === 'SERVICE' || selected === 'SERVICE_LIMIT'
-        ? 'Product Type Group = Service'
-        : 'GR Required = Yes',
-    },
-    ...Array.from({ length: Math.max(conditionCount - 2, 0) }, (_, index) => ({
-      key: `condition${index + 3}`,
-      label: `条件 ${index + 3}`,
-      children: <Typography.Text type="secondary">待配置条件</Typography.Text>,
-    })),
-    {
-      key: 'result',
-      label: '识别结果',
-      children: <Typography.Text strong>{scenarioMeta[selected].label}</Typography.Text>,
-    },
-  ];
-
-  return (
-    <>
-      <PageHeader
-        title="执行场景配置"
-        description="管理采购订单行的场景识别、执行控制方式和允许的业务动作。字段显示与校验请在“动态字段规则”中维护。"
-        actions={(
-          <Button type="primary" icon={<SaveOutlined />} onClick={() => message.success('执行场景配置已保存。')}>
-            保存配置
-          </Button>
-        )}
-      />
-      <Row gutter={16} align="top" wrap={false}>
-        <Col flex="260px">
-          <Card
-            className="business-card config-scenario-list"
-            title="执行场景"
-            extra={<Button type="text" aria-label="新增场景" icon={<PlusOutlined />} onClick={addScenario} />}
-          >
-            <div className="config-scenario-items">
-              {scenarioList.map((item) => (
-                <button
-                  type="button"
-                  className={item.code === selected ? 'is-selected' : ''}
-                  onClick={() => setSelected(item.code)}
-                  key={item.code}
-                >
-                  <CheckCircleFilled className={item.enabled ? 'scenario-enabled' : undefined} />
-                  <span>
-                    <strong>{scenarioMeta[item.code].label}</strong>
-                    <small>{item.mode} · {item.action}</small>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </Card>
-        </Col>
-        <Col flex="auto" className="config-editor-col">
-          <Card
-            className="business-card config-editor"
-            title={scenarioMeta[selected].label}
-            extra={(
-              <Space size={8}>
-                <Typography.Text type="secondary">启用场景</Typography.Text>
-                <Switch size="small" checked={scenario.enabled} onChange={(enabled) => updateScenario({ enabled })} />
-              </Space>
-            )}
-          >
-            <Tabs
-              items={[
-                {
-                  key: 'basic',
-                  label: '基本信息',
-                  children: (
-                    <Form layout="vertical">
-                      <div className="dynamic-form-grid">
-                        <Form.Item label="场景编码"><Input readOnly value={scenario.code} /></Form.Item>
-                        <Form.Item label="场景名称"><Input value={scenarioMeta[selected].label} readOnly /></Form.Item>
-                        <Form.Item label="执行控制方式">
-                          <Select value={scenario.mode} options={modeOptions} onChange={(mode) => updateScenario({ mode })} />
-                        </Form.Item>
-                        <Form.Item label="主执行动作"><Input value={scenario.action} readOnly /></Form.Item>
-                        <Form.Item className="dynamic-form-grid__wide" label="允许操作">
-                          <Checkbox.Group
-                            value={selectedOperations}
-                            options={operationOptions}
-                            onChange={(values) => setAllowedOperations((current) => ({ ...current, [selected]: values as string[] }))}
-                          />
-                        </Form.Item>
-                      </div>
-                    </Form>
-                  ),
-                },
-                {
-                  key: 'recognition',
-                  label: '场景识别条件',
-                  children: (
-                    <>
-                      <Descriptions bordered size="small" column={1} items={recognitionItems} />
-                      <Flex justify="flex-end" className="config-actions">
-                        <Button
-                          icon={<PlusOutlined />}
-                          onClick={() => {
-                            setConditionCounts((current) => ({ ...current, [selected]: conditionCount + 1 }));
-                            message.success('已添加一条待配置识别条件。');
-                          }}
-                        >
-                          添加条件
-                        </Button>
-                      </Flex>
-                    </>
-                  ),
-                },
-                {
-                  key: 'actions',
-                  label: '业务动作',
-                  children: (
-                    <div className="config-action-panel">
-                      <Typography.Text type="secondary">订单行识别为该场景后，工作台优先展示以下主操作：</Typography.Text>
-                      <Radio.Group
-                        value={scenario.action}
-                        options={actionOptions}
-                        onChange={(event) => updateScenario({ action: event.target.value })}
-                      />
-                    </div>
-                  ),
-                },
-              ]}
-            />
-          </Card>
-        </Col>
-      </Row>
-    </>
-  );
+  const scenario = scenarios.find((item) => item.code === selected) ?? scenarios[0];
+  return <>
+    <PageHeader title="执行场景配置" description="查看采购订单行识别出的履约语义、控制方式和主业务动作。字段显示及校验见动态字段规则。" />
+    <Alert className="editor-section" type="info" showIcon title="当前展示前端内置的核心场景目录。场景版本尚未接入 pur_rule_version / pur_rule_bundle 发布服务，页面不提供未持久化的编辑操作。" />
+    <Row gutter={16} align="top" wrap={false}>
+      <Col flex="260px">
+        <Card className="business-card config-scenario-list" title="核心执行场景">
+          <div className="config-scenario-items">{scenarios.map((item) => <button type="button" className={item.code === selected ? 'is-selected' : ''} onClick={() => setSelected(item.code)} key={item.code}>
+            <CheckCircleFilled className="scenario-enabled" /><span><strong>{scenarioMeta[item.code].label}</strong><small>{item.control} · {item.action}</small></span>
+          </button>)}</div>
+        </Card>
+      </Col>
+      <Col flex="auto" className="config-editor-col">
+        <Card className="business-card config-editor" title={scenarioMeta[selected].label} extra={<Tag color="processing">原型内置</Tag>}>
+          <Tabs items={[
+            { key: 'basic', label: '场景语义', children: <Descriptions bordered size="small" column={2} items={[
+              { key: 'code', label: '场景编码', children: selected }, { key: 'name', label: '场景名称', children: scenarioMeta[selected].label },
+              { key: 'control', label: '控制方式', children: scenario.control }, { key: 'action', label: '主执行动作', children: scenario.action },
+              { key: 'source', label: '识别来源', children: scenario.source, span: 2 },
+            ]} /> },
+            { key: 'recognition', label: '识别条件', children: <Descriptions bordered size="small" column={1} items={[
+              { key: 'recognition', label: '订单行条件', children: scenario.recognition },
+              { key: 'unsupported', label: '未知/未适配组合', children: <Typography.Text type="warning">阻断履约，并提示需要补充业务适配；不会退化为普通收货。</Typography.Text> },
+            ]} /> },
+            { key: 'actions', label: '操作边界', children: <Descriptions bordered size="small" column={1} items={[
+              { key: 'allowed', label: '主要动作', children: scenario.action },
+              { key: 'returns', label: '后续反向处理', children: selected === 'SERVICE' ? '服务验收更正（原服务验收保持不变）' : '依据原履约事实选择采购退货或冲销' },
+              { key: 'erp', label: 'SAP边界', children: '正式环境需先检查订单版本、审批、SAP状态、外部依赖和剩余余额；SAP 状态未知时不得重试。' },
+            ]} /> },
+          ]} />
+        </Card>
+      </Col>
+    </Row>
+  </>;
 }

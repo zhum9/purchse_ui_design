@@ -1,8 +1,8 @@
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { useMutation } from '@tanstack/react-query';
-import { App, Button, DatePicker, Divider, Drawer, Form, Input, InputNumber, Select, Space, Typography } from 'antd';
+import { Alert, App, Button, DatePicker, Divider, Drawer, Form, Input, InputNumber, Select, Space, Typography } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { ProcurementDemand, ProcurementPriority } from '@domain/procurement/types';
 import { saveProcurementDemand, type DemandLineInput, type DemandUpsertInput } from '../api/procurementPlanningApi';
 
@@ -41,12 +41,13 @@ const objectTypeOptions = [
 ];
 
 const defaultLine = (): DemandLineFormValue => ({
-  objectType: 'MATERIAL', content: '', materialGroup: '', quantity: 1, unit: '件', estimatedUnitPrice: 0, requiredDate: dayjs().add(14, 'day'),
+  objectType: 'MATERIAL', content: '', materialGroup: '', quantity: 1, unit: '件', requiredDate: dayjs().add(14, 'day'),
 });
 
 export function DemandEditorDrawer({ open, mode, demand, onClose, onSaved }: DemandEditorDrawerProps) {
   const [form] = Form.useForm<DemandFormValues>();
   const { message } = App.useApp();
+  const [error, setError] = useState<string>();
   const mutation = useMutation({ mutationFn: saveProcurementDemand });
 
   useEffect(() => {
@@ -66,17 +67,22 @@ export function DemandEditorDrawer({ open, mode, demand, onClose, onSaved }: Dem
   }, [demand, form, open]);
 
   const submit = async (status: DemandUpsertInput['status']) => {
-    const values = await form.validateFields();
-    await mutation.mutateAsync({
-      ...values,
-      id: demand?.id,
-      status,
-      requiredDate: values.requiredDate.format('YYYY-MM-DD'),
-      lines: values.lines.map((line) => ({ ...line, requiredDate: line.requiredDate.format('YYYY-MM-DD') })),
-    });
-    message.success(status === 'DRAFT' ? '采购需求草稿已保存。' : '采购需求已提交审批。');
-    form.resetFields();
-    onSaved();
+    try {
+      setError(undefined);
+      const values = await form.validateFields();
+      await mutation.mutateAsync({
+        ...values,
+        id: demand?.id,
+        status,
+        requiredDate: values.requiredDate.format('YYYY-MM-DD'),
+        lines: values.lines.map((line) => ({ ...line, requiredDate: line.requiredDate.format('YYYY-MM-DD') })),
+      });
+      message.success(status === 'DRAFT' ? '采购需求草稿已保存到本机。' : '采购需求已提交至本机演示审批流程。');
+      form.resetFields();
+      onSaved();
+    } catch (cause) {
+      if (cause instanceof Error) setError(cause.message);
+    }
   };
 
   const title = mode === 'create' ? '新建采购需求' : mode === 'edit' ? '编辑采购需求' : '采购需求详情';
@@ -92,6 +98,8 @@ export function DemandEditorDrawer({ open, mode, demand, onClose, onSaved }: Dem
       <Button type="primary" onClick={() => submit('SUBMITTED')} loading={mutation.isPending}>提交审批</Button>
     </Space>}
   >
+    {error && <Alert className="editor-section" type="error" showIcon title={error} />}
+    {mutation.isError && <Alert className="editor-section" type="error" showIcon title={mutation.error.message} />}
     <Form form={form} layout="vertical" disabled={mode === 'view'} requiredMark="optional">
       <Typography.Title level={5}>需求基本信息</Typography.Title>
       <div className="planning-form-grid">
@@ -122,7 +130,7 @@ export function DemandEditorDrawer({ open, mode, demand, onClose, onSaved }: Dem
               <Form.Item className="planning-form-grid__wide" name={[field.name, 'specification']} label="规格/服务要求"><Input /></Form.Item>
               <Form.Item name={[field.name, 'quantity']} label="需求数量" rules={[{ required: true }]}><InputNumber className="field-full" min={0.01} precision={2} /></Form.Item>
               <Form.Item name={[field.name, 'unit']} label="单位" rules={[{ required: true }]}><Select showSearch options={['吨','件','批','台','项','月','元'].map((value) => ({ value, label: value }))} /></Form.Item>
-              <Form.Item name={[field.name, 'estimatedUnitPrice']} label="预估单价" rules={[{ required: true }]}><InputNumber className="field-full" min={0} precision={2} prefix="¥" /></Form.Item>
+              <Form.Item name={[field.name, 'estimatedUnitPrice']} label="预估单价（可选）" extra="未知价格留空，不代表免费。"><InputNumber className="field-full" min={0.01} precision={2} prefix="¥" /></Form.Item>
               <Form.Item name={[field.name, 'requiredDate']} label="需求日期" rules={[{ required: true }]}><DatePicker className="field-full" /></Form.Item>
               <Form.Item name={[field.name, 'plant']} label="工厂"><Input /></Form.Item>
             </div>

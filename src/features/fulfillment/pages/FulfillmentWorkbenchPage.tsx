@@ -1,9 +1,9 @@
 import { DownOutlined, EyeOutlined, FileDoneOutlined, MoreOutlined, SearchOutlined, UpOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Dropdown, Empty, Flex, Form, Input, Select, Space, Table, Tabs, Tag, Typography, type TableColumnsType } from 'antd';
+import { Button, Dropdown, Empty, Flex, Form, Input, Select, Space, Table, Tabs, Tag, Tooltip, Typography, type TableColumnsType } from 'antd';
+import { executionBlockReason, isOverdue } from '@domain/procurement/eligibility';
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { getRemainingValue } from '@domain/procurement/calculations';
 import { scenarioMeta } from '@domain/procurement/meta';
 import type { PurchaseOrderItem } from '@domain/procurement/types';
 import { ExecutionProgress } from '@shared/components/ExecutionProgress/ExecutionProgress';
@@ -45,16 +45,16 @@ export function FulfillmentWorkbenchPage() {
   };
 
   const columns: TableColumnsType<PurchaseOrderItem> = [
-    { title: 'SAP PO / Item', key: 'po', width: 156, fixed: 'left', render: (_, item) => <div className="primary-cell"><Button type="link" onClick={() => navigate(`/purchase-orders/${item.poId}`)}>{item.sapPoNo}</Button><span>行 {item.itemNo}</span></div> },
+    { title: '采购订单 / 行', key: 'po', width: 175, fixed: 'left', render: (_, item) => <div className="primary-cell"><Button type="link" onClick={() => navigate(`/purchase-orders/${item.poId}`)}>{item.businessOrderNo || item.sapPoNo}</Button><span>SAP {item.sapPoNo || '待生效'} · {item.itemNo}</span></div> },
     { title: '供应商', dataIndex: 'supplier', width: 190, ellipsis: true },
     { title: '采购内容', key: 'content', width: 220, render: (_, item) => <div className="primary-cell"><strong>{item.content}</strong><span>{item.materialCode ? `${item.materialCode} · ${item.materialGroup}` : item.materialGroup}</span></div> },
     { title: '执行场景', dataIndex: 'executionScenario', width: 112, render: (value: PurchaseOrderItem['executionScenario']) => <Tag color={scenarioMeta[value].color}>{scenarioMeta[value].label}</Tag> },
     { title: '订单量 / 额度', key: 'ordered', width: 154, align: 'right', render: (_, item) => item.unit === '元' ? formatMoney(item.overallLimit ?? item.orderedValue) : formatQuantity(item.orderedValue, item.unit) },
     { title: '执行进度', key: 'progress', width: 210, render: (_, item) => <ExecutionProgress item={item} compact /> },
     { title: '计划日期', dataIndex: 'plannedDate', width: 112 },
-    { title: '履约状态', key: 'status', width: 116, render: (_, item) => <StatusTag domain="fulfillment" value={item.status.fulfillmentStatus} /> },
+    { title: '履约 / 交期风险', key: 'status', width: 140, render: (_, item) => <Space direction="vertical" size={4}><StatusTag domain="fulfillment" value={item.status.fulfillmentStatus} />{isOverdue(item) && <Tag color="warning">逾期未履约</Tag>}</Space> },
     { title: '操作', key: 'actions', width: 170, fixed: 'right', render: (_, item) => <Space>
-      <PermissionGuard permission={item.executionScenario === 'SERVICE' ? 'service:accept' : 'receipt:create'}><Button type="link" disabled={getRemainingValue(item) === 0} onClick={() => execute(item)}>{actionLabel(item)}</Button></PermissionGuard>
+      <PermissionGuard permission={item.executionScenario === 'SERVICE' ? 'service:accept' : 'receipt:create'}><Tooltip title={executionBlockReason(item)}><span><Button type="link" disabled={Boolean(executionBlockReason(item))} onClick={() => execute(item)}>{actionLabel(item)}</Button></span></Tooltip></PermissionGuard>
       <Dropdown menu={{ items: [
         { key: 'detail', icon: <EyeOutlined />, label: '查看订单详情', onClick: () => navigate(`/purchase-orders/${item.poId}`) },
         { key: 'flow', icon: <FileDoneOutlined />, label: '查看单据流', onClick: () => navigate(`/purchase-orders/${item.poId}?tab=flow`) },

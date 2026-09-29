@@ -12,8 +12,10 @@ export async function apiClient<T>(url: string, init?: RequestInit): Promise<T> 
     ...init,
     headers: { 'Content-Type': 'application/json', ...init?.headers },
   });
-  if (!response.ok) throw new AppApiError('数据请求失败，请稍后重试。', response.status);
+  const contentType = response.headers.get('content-type') ?? '';
+  if (!contentType.includes('application/json')) throw new AppApiError('业务数据服务未就绪。请刷新后重试；编辑内容仍保留在页面。', response.status);
   const result = (await response.json()) as ApiResponse<T>;
+  if (!response.ok) throw new AppApiError(result.message || '数据请求失败，请稍后重试。', response.status);
   if (!result.success) throw new AppApiError(result.message ?? '业务处理失败。', response.status);
   return result.data;
 }

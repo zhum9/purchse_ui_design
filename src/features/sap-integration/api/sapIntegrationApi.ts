@@ -4,4 +4,4 @@ import type { PageResult } from '@shared/api/types';
 
 export const sapKeys = { all: ['sap-executions'] as const };
 export const getSapExecutions = () => apiClient<PageResult<SapExecution>>('/api/sap/executions');
-export const reconcileSapExecution = (id: string) => apiClient<{ id: string; status: string; sapDocumentNo: string }>(`/api/sap/executions/${id}/reconcile`, { method: 'POST' });
+export const reconcileSapExecution = (id: string) => apiClient<{ id: string; status: string; sapDocumentNo?: string; message: string }>(`/api/sap/executions/${id}/reconcile`, { method: 'POST' });

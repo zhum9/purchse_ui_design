@@ -1,6 +1,8 @@
 import { EditOutlined, EyeOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Empty, Form, Input, Select, Space, Table, Tabs, Typography, type TableColumnsType } from 'antd';
+import { Button, Empty, Form, Input, Select, Space, Table, Tabs, Tag, Typography, type TableColumnsType } from 'antd';
+import { revisionMeta } from '@domain/purchase-order/status';
+import { orderTotals } from '@domain/purchase-order/rules';
 import { useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { PurchaseOrder } from '@domain/procurement/types';
@@ -11,7 +13,7 @@ import { formatDateTime, formatMoney } from '@shared/utils/format';
 import { getPurchaseOrders, purchaseOrderKeys } from '../api/purchaseOrderApi';
 
 const filters = [
-  { key: 'ALL', label: '全部订单' }, { key: 'OPEN', label: '待执行' }, { key: 'PARTIAL', label: '部分执行' },
+  { key: 'ALL', label: '全部订单' }, { key: 'WORKING', label: '草稿' }, { key: 'PENDING', label: '待审批' }, { key: 'AUTHORIZED', label: '待生效' }, { key: 'OPEN', label: '待执行' }, { key: 'PARTIAL', label: '部分执行' },
   { key: 'COMPLETE', label: '执行完成' }, { key: 'EXCEPTION', label: '异常' },
 ];
 const sourceLabels: Record<PurchaseOrder['source'], string> = { CONTRACT: '采购合同', REQUISITION: '采购需求', SOURCING: '寻源结果', PLAN: '采购计划', DIRECT: '直接采购', EXTERNAL_SAP: 'SAP下发' };
@@ -27,17 +29,18 @@ export function PurchaseOrderListPage() {
     setSearchParams(next);
   };
   const columns: TableColumnsType<PurchaseOrder> = [
-    { title: '采购订单', dataIndex: 'sapPoNo', width: 165, fixed: 'left', render: (value: string, order) => <div className="primary-cell"><Button type="link" onClick={() => navigate(`/purchase-orders/${order.id}`)}>{value || order.businessOrderNo}</Button><span>{value ? order.businessOrderNo : 'SAP订单号待同步'}</span></div> },
+    { title: '采购订单', dataIndex: 'sapPoNo', width: 180, fixed: 'left', render: (value: string, order) => <div className="primary-cell"><Button type="link" onClick={() => navigate(`/purchase-orders/${order.id}`)}>{order.businessOrderNo}</Button><span>SAP {value || '待生效'}</span></div> },
     { title: '订单来源', dataIndex: 'source', width: 110, render: (value: PurchaseOrder['source']) => sourceLabels[value] },
     { title: '供应商', dataIndex: 'supplier', width: 210, ellipsis: true },
     { title: '采购组织 / 采购组', key: 'org', width: 190, render: (_, order) => <div className="primary-cell"><span>{order.purchaseOrganization}</span><span>{order.purchaseGroup}</span></div> },
     { title: '订单日期', dataIndex: 'orderDate', width: 112 },
-    { title: '订单金额', dataIndex: 'amount', width: 150, align: 'right', render: (value: number) => <Typography.Text strong>{formatMoney(value)}</Typography.Text> },
+    { title: '约定 / 预计金额', dataIndex: 'amount', width: 170, align: 'right', render: (value: number, order) => { const revision = order.commercial?.revisions.find((entry) => entry.id === (order.commercial?.effectiveRevisionId ?? order.commercial?.workingRevisionId)); const totals = revision && orderTotals(revision.content); return <div><Typography.Text strong>{formatMoney(value)}</Typography.Text>{Boolean(totals?.unpriced) && <div><Tag color="warning">{totals?.unpriced} 行待定价</Tag></div>}</div>; } },
+    { title: '版本 / 审批', width: 155, render: (_, order) => order.revisionStatus ? <Tag color={revisionMeta[order.revisionStatus].color}>{revisionMeta[order.revisionStatus].label}</Tag> : <Tag color="success">历史正式订单</Tag> },
     { title: '行数', dataIndex: 'items', width: 76, align: 'right', render: (items: PurchaseOrder['items']) => items.length },
     { title: '履约状态', key: 'fulfillment', width: 118, render: (_, order) => <StatusTag domain="fulfillment" value={order.status.fulfillmentStatus} /> },
     { title: 'SAP同步状态', key: 'sap', width: 138, render: (_, order) => <StatusTag domain="sap" value={order.status.sapSyncStatus} /> },
     { title: '更新时间', dataIndex: 'updatedAt', width: 155, render: formatDateTime },
-    { title: '操作', key: 'action', width: 145, fixed: 'right', render: (_, order) => <Space size={4}><Button type="link" icon={<EyeOutlined />} onClick={() => navigate(`/purchase-orders/${order.id}`)}>查看</Button>{order.source === 'DIRECT' && order.status.documentStatus === 'DRAFT' && <Button type="link" icon={<EditOutlined />} onClick={() => navigate(`/purchase-orders/${order.id}/edit`)}>编辑</Button>}</Space> },
+    { title: '操作', key: 'action', width: 145, fixed: 'right', render: (_, order) => <Space size={4}><Button type="link" icon={<EyeOutlined />} onClick={() => navigate(`/purchase-orders/${order.id}`)}>查看</Button>{order.revisionStatus === 'WORKING' && <Button type="link" icon={<EditOutlined />} onClick={() => navigate(`/purchase-orders/${order.id}/edit`)}>编制</Button>}</Space> },
   ];
   if (query.isError) return <PageError onRetry={() => query.refetch()} />;
   return <>

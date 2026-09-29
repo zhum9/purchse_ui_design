@@ -4,7 +4,7 @@ export const getExecutionCeiling = (item: PurchaseOrderItem) =>
   item.controlMode === 'LIMIT' ? (item.overallLimit ?? item.orderedValue) : item.orderedValue;
 
 export const getRemainingValue = (item: PurchaseOrderItem) =>
-  Math.max(0, getExecutionCeiling(item) - item.executedValue);
+  Math.max(0, getExecutionCeiling(item) - item.executedValue - (item.reservedValue ?? 0));
 
 export const getExecutionPercent = (item: PurchaseOrderItem) => {
   const ceiling = getExecutionCeiling(item);

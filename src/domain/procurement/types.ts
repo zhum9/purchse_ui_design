@@ -30,7 +30,7 @@ export type ExecutionControlMode =
 export type DocumentStatus = 'DRAFT' | 'ACTIVE' | 'CLOSED' | 'CANCELLED';
 export type FulfillmentStatus = 'OPEN' | 'PARTIAL' | 'COMPLETE' | 'BLOCKED' | 'OVERDUE';
 export type ReceiptStatus = 'NOT_RECEIVED' | 'PARTIAL' | 'COMPLETE' | 'REVERSED' | 'RETURNED';
-export type ApprovalStatus = 'NOT_REQUIRED' | 'PENDING' | 'APPROVED' | 'REJECTED';
+export type ApprovalStatus = 'NOT_SUBMITTED' | 'NOT_REQUIRED' | 'PENDING' | 'APPROVED' | 'REJECTED';
 export type SapSyncStatus = 'WAITING' | 'PROCESSING' | 'SUCCESS' | 'FAILED' | 'UNKNOWN';
 export type ProcurementDemandStatus = 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'PARTIALLY_PLANNED' | 'PLANNED' | 'REJECTED' | 'CANCELLED';
 export type DemandLineStatus = 'OPEN' | 'PARTIALLY_PLANNED' | 'PLANNED' | 'CANCELLED';
@@ -48,6 +48,14 @@ export interface PurchaseOrderStatus {
 }
 
 export interface PurchaseOrderItem {
+  businessOrderNo?: string;
+  orderRevisionId?: string;
+  executionDisabledReason?: string;
+  reservedValue?: number;
+  commercialQuantity?: string;
+  commercialUnit?: string;
+  serviceStart?: string;
+  serviceEnd?: string;
   id: string;
   poId: string;
   sapPoNo: string;
@@ -77,6 +85,9 @@ export interface PurchaseOrderItem {
 }
 
 export interface PurchaseOrder {
+  revisionStatus?: import('@domain/purchase-order/types').RevisionStatus;
+  revisionNo?: number;
+  commercial?: import('@domain/purchase-order/types').OrderDocument;
   id: string;
   businessOrderNo: string;
   sapPoNo: string;
@@ -96,6 +107,8 @@ export interface PurchaseOrder {
 }
 
 export interface ProcurementDemandLine {
+  reservedQuantity?: number;
+  committedQuantity?: number;
   id: string;
   demandId: string;
   lineNo: string;
@@ -108,8 +121,8 @@ export interface ProcurementDemandLine {
   quantity: number;
   plannedQuantity: number;
   unit: string;
-  estimatedUnitPrice: number;
-  estimatedAmount: number;
+  estimatedUnitPrice?: number;
+  estimatedAmount?: number;
   requiredDate: string;
   plant?: string;
   status: DemandLineStatus;
@@ -125,7 +138,7 @@ export interface ProcurementDemand {
   costCenter?: string;
   priority: ProcurementPriority;
   requiredDate: string;
-  estimatedAmount: number;
+  estimatedAmount?: number;
   status: ProcurementDemandStatus;
   approvalStatus: ApprovalStatus;
   createdAt: string;
@@ -143,6 +156,8 @@ export interface DemandPoolItem extends ProcurementDemandLine {
 }
 
 export interface ProcurementPlanLine {
+  reservedQuantity?: number;
+  sourceShares?: Array<{ lineId: string; quantity: string }>;
   id: string;
   planId: string;
   lineNo: string;
@@ -157,8 +172,8 @@ export interface ProcurementPlanLine {
   plannedQuantity: number;
   orderedQuantity: number;
   unit: string;
-  estimatedUnitPrice: number;
-  estimatedAmount: number;
+  estimatedUnitPrice?: number;
+  estimatedAmount?: number;
   requiredDate: string;
   plant?: string;
 }
@@ -173,7 +188,7 @@ export interface ProcurementPlan {
   company: string;
   owner: string;
   plannedOrderDate: string;
-  estimatedAmount: number;
+  estimatedAmount?: number;
   status: ProcurementPlanStatus;
   approvalStatus: ApprovalStatus;
   createdAt: string;
@@ -185,13 +200,16 @@ export interface ProcurementPlan {
 export type ExecutionEventType =
   | 'GOODS_RECEIPT'
   | 'SERVICE_ACCEPTANCE'
-  | 'AMOUNT_CONFIRMATION'
+  | 'LIMIT_CONFIRMATION'
   | 'GR_REVERSAL'
   | 'PURCHASE_RETURN'
   | 'RETURN_REVERSAL'
+  | 'SERVICE_REVERSAL'
   | 'DELIVERY_COMPLETE';
 
 export interface ExecutionEvent {
+  inputSnapshot?: Record<string, unknown>;
+  requestKey?: string;
   id: string;
   type: ExecutionEventType;
   poId: string;

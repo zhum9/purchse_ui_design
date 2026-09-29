@@ -4,8 +4,7 @@ import type { DynamicFieldSchema, ExecutionFormSchema } from './types';
 
 const acceptanceOptions = [
   { value: 'PASS', label: '验收通过' },
-  { value: 'CONDITIONAL', label: '有条件通过' },
-  { value: 'REJECT', label: '验收不通过' },
+  { value: 'FAIL', label: '验收不通过' },
 ];
 
 const attachments: DynamicFieldSchema[] = [
@@ -48,8 +47,8 @@ const freeTextReceiptSchema = (item: PurchaseOrderItem): ExecutionFormSchema => 
 const serviceAcceptanceSchema = (item: PurchaseOrderItem): ExecutionFormSchema => ({
   title: '服务验收', submitLabel: '提交验收', fields: [
     { key: 'servicePeriod', label: '服务期间', component: 'dateRange', state: 'REQUIRED', source: 'USER', group: 'SERVICE', span: 2 },
-    { key: 'completedQuantity', label: '本次完成数量', component: 'number', state: 'OPTIONAL', source: 'USER', group: 'SERVICE', min: 0, unit: '项' },
-    { key: 'unit', label: '服务单位', component: 'input', state: 'OPTIONAL', source: 'USER', group: 'SERVICE', defaultValue: '项' },
+    { key: 'completedQuantity', label: '本次完成数量', component: 'number', state: item.commercialQuantity ? 'REQUIRED' : 'HIDDEN', source: 'USER', group: 'SERVICE', min: 0.000001, unit: item.commercialUnit },
+    { key: 'unit', label: '服务单位', component: 'input', state: item.commercialQuantity ? 'DISPLAY' : 'HIDDEN', source: 'MASTER', group: 'SERVICE', defaultValue: item.commercialUnit },
     { key: 'confirmedAmount', label: '本次确认金额', component: 'number', state: 'REQUIRED', source: 'USER', group: 'EXECUTION', min: 0.01, max: getRemainingValue(item), unit: '元', businessHelp: `剩余可验收金额 ${getRemainingValue(item).toLocaleString('zh-CN')} 元` },
     { key: 'acceptanceResult', label: '验收结果', component: 'radio', state: 'REQUIRED', source: 'USER', group: 'EXECUTION', options: acceptanceOptions },
     { key: 'completionDescription', label: '服务完成说明', component: 'textarea', state: 'REQUIRED', source: 'USER', group: 'SERVICE', span: 2, placeholder: '说明本阶段服务范围、工作成果及完成情况' },

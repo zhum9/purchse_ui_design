@@ -67,9 +67,10 @@ export const planStatusMeta: Record<ProcurementPlanStatus, { label: string; tone
 };
 
 export const eventTypeMeta: Record<ExecutionEventType, { label: string; tone: StatusTone }> = {
+  SERVICE_REVERSAL: { label: '服务验收更正', tone: 'warning' },
   GOODS_RECEIPT: { label: '采购收货', tone: 'processing' },
   SERVICE_ACCEPTANCE: { label: '服务验收', tone: 'processing' },
-  AMOUNT_CONFIRMATION: { label: '执行确认', tone: 'processing' },
+  LIMIT_CONFIRMATION: { label: '限额执行确认', tone: 'processing' },
   GR_REVERSAL: { label: '收货冲销', tone: 'default' },
   PURCHASE_RETURN: { label: '采购退货', tone: 'warning' },
   RETURN_REVERSAL: { label: '退货冲销', tone: 'default' },

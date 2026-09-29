@@ -1,6 +1,6 @@
 import { EyeOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Empty, Form, Input, Progress, Select, Space, Table, Tabs, Tag, Typography, type TableColumnsType } from 'antd';
+import { Button, Empty, Form, Input, Select, Space, Table, Tabs, Tag, Typography, type TableColumnsType } from 'antd';
 import { useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { ProcurementPlan } from '@domain/procurement/types';
@@ -28,16 +28,16 @@ export function ProcurementPlanListPage() {
     { title: '采购组织 / 采购组', key: 'org', width: 185, render: (_, plan) => <div className="primary-cell"><span>{plan.purchaseOrganization}</span><span>{plan.purchaseGroup}</span></div> },
     { title: '计划负责人', dataIndex: 'owner', width: 112 },
     { title: '计划下单日期', dataIndex: 'plannedOrderDate', width: 130 },
-    { title: '预估金额', dataIndex: 'estimatedAmount', width: 150, align: 'right', render: (value: number) => formatMoney(value) },
+    { title: '预估金额', dataIndex: 'estimatedAmount', width: 150, align: 'right', render: (value?: number) => value === undefined ? '部分待估' : formatMoney(value) },
     { title: '明细', dataIndex: 'lines', width: 75, align: 'right', render: (lines: ProcurementPlan['lines']) => lines.length },
-    { title: '订单转换进度', key: 'progress', width: 170, render: (_, plan) => { const planned = plan.lines.reduce((sum, line) => sum + line.plannedQuantity, 0); const ordered = plan.lines.reduce((sum, line) => sum + line.orderedQuantity, 0); return <Progress percent={planned ? Math.round((ordered / planned) * 100) : 0} size="small" />; } },
+    { title: '采购已安排', key: 'progress', width: 170, render: (_, plan) => `${plan.lines.filter((line) => line.orderedQuantity >= line.plannedQuantity).length} / ${plan.lines.length} 行（不混加单位）` },
     { title: '计划状态', dataIndex: 'status', width: 145, render: (value: ProcurementPlan['status']) => <StatusTag domain="plan" value={value} /> },
     { title: '更新时间', dataIndex: 'updatedAt', width: 155, render: formatDateTime },
     { title: '操作', key: 'action', width: 90, fixed: 'right', render: (_, plan) => <Button type="link" icon={<EyeOutlined />} onClick={() => navigate(`/planning/plans/${plan.id}`)}>查看</Button> },
   ];
   if (query.isError) return <PageError onRetry={() => query.refetch()} />;
   return <>
-    <PageHeader title="采购计划" description="承接已审批采购需求，统一编制、审批并生成可追溯的采购订单。" actions={<Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/planning/aggregation')}>从需求汇总创建</Button>} />
+    <PageHeader title="采购计划" description="采购计划是可选环节。支持需求汇总或独立编制，经授权后分次形成订单。" actions={<Space><Button onClick={() => navigate('/planning/aggregation')}>从需求池编制</Button><Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/planning/plans/new')}>新建独立计划</Button></Space>} />
     <div className="content-surface content-surface--flush">
       <Tabs className="quick-tabs" activeKey={queryParams.status} onChange={(status) => update({ status })} items={planStatusFilters.map((item) => ({ key: item.key, label: item.label }))} />
       <Form className="search-panel" layout="inline" initialValues={queryParams} onFinish={(values: { keyword?: string; purchaseOrganization?: string }) => update(values)}>

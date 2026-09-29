@@ -1,5 +1,6 @@
-import { InboxOutlined, InfoCircleOutlined } from '@ant-design/icons';
-import { DatePicker, Form, Input, InputNumber, Radio, Select, Typography, Upload } from 'antd';
+import { InfoCircleOutlined } from '@ant-design/icons';
+import { DatePicker, Form, Input, InputNumber, Radio, Select, Typography } from 'antd';
+import { LocalAttachmentUpload } from '@shared/components/LocalAttachmentUpload/LocalAttachmentUpload';
 import type { FormInstance, UploadFile } from 'antd';
 import type { DynamicFieldSchema, ExecutionFormSchema, ExecutionFormValues } from '@domain/execution-rule/types';
 
@@ -17,13 +18,7 @@ const renderControl = (field: DynamicFieldSchema) => {
     case 'dateRange': return <RangePicker className="field-full" />;
     case 'textarea': return <Input.TextArea rows={3} showCount maxLength={500} placeholder={field.placeholder} />;
     case 'radio': return <Radio.Group options={field.options} optionType="button" buttonStyle="solid" />;
-    case 'upload': return (
-      <Upload.Dragger beforeUpload={() => false} multiple maxCount={6}>
-        <p className="ant-upload-drag-icon"><InboxOutlined /></p>
-        <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
-        <p className="ant-upload-hint">单个文件不超过 20MB，最多上传 6 个文件</p>
-      </Upload.Dragger>
-    );
+    case 'upload': return <LocalAttachmentUpload />;
     default: return <Input placeholder={field.placeholder} />;
   }
 };
@@ -58,7 +53,10 @@ export function DynamicForm({ schema, form, onValuesChange }: DynamicFormProps) 
                   name={field.key}
                   label={field.label}
                   tooltip={field.businessHelp ? { title: field.businessHelp, icon: <InfoCircleOutlined /> } : undefined}
-                  rules={field.state === 'REQUIRED' ? [{ required: true, message: `请填写${field.label}` }] : undefined}
+                  rules={[
+                    ...(field.state === 'REQUIRED' ? [{ required: true, message: `请填写${field.label}` }] : []),
+                    ...(field.component === 'upload' ? [{ validator: async (_: unknown, files?: UploadFile[]) => { if (files?.some((file) => file.status !== 'done')) throw new Error('请等待附件保存完成，失败附件须移除或重新上传。'); } }] : []),
+                  ]}
                   extra={field.businessHelp}
                 >
                   {field.state === 'DISPLAY'

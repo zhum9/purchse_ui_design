@@ -1,144 +1,44 @@
-import { CheckCircleOutlined, SyncOutlined } from '@ant-design/icons';
-import {
-  App,
-  Alert,
-  Button,
-  Descriptions,
-  Table,
-  Tag,
-  Typography,
-  type TableColumnsType,
-} from 'antd';
-import { useState } from 'react';
+import { SyncOutlined } from '@ant-design/icons';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Alert, App, Button, Empty, Space, Table, Tag, Typography, type TableColumnsType } from 'antd';
+import { useMemo } from 'react';
+import { eventTypeMeta } from '@domain/procurement/meta';
+import type { SapExecution } from '@domain/procurement/types';
 import { PageHeader } from '@shared/components/PageHeader';
-
-interface ReconciliationAnomaly {
-  id: string;
-  type: string;
-  po: string;
-  document: string;
-  suggestion: string;
-  severity: '高' | '中';
-}
-
-const anomalies: ReconciliationAnomaly[] = [
-  { id: 'RC-001', type: 'SAP有凭证，本地没有结果', po: '4500023412 / 00010', document: '5000123999', suggestion: '核对业务请求ID后，将 SAP 凭证安全回写本地。', severity: '高' },
-  { id: 'RC-002', type: 'PO发生变更，业务系统未同步', po: '4500023088 / 00010', document: '-', suggestion: '同步采购订单最新交货日期与库存地点后重新校验。', severity: '中' },
-  { id: 'RC-003', type: '数量不一致', po: '4500012345 / 00010', document: '5000123511', suggestion: '核对冲销与退货事件，按净履约数量重新对账。', severity: '中' },
-];
+import { PageError, PageLoading } from '@shared/components/PageState';
+import { StatusTag } from '@shared/components/StatusTag';
+import { formatDateTime } from '@shared/utils/format';
+import { getSapExecutions, reconcileSapExecution, sapKeys } from '../api/sapIntegrationApi';
 
 export function SapReconciliationPage() {
-  const { message, modal } = App.useApp();
-  const [checking, setChecking] = useState(false);
-  const [lastChecked, setLastChecked] = useState('2026-09-11 15:30');
-  const [resolvedIds, setResolvedIds] = useState<string[]>([]);
-
-  const runReconciliation = () => {
-    setChecking(true);
-    window.setTimeout(() => {
-      setChecking(false);
-      setLastChecked(new Date().toLocaleString('zh-CN', { hour12: false }));
-      message.success('对账完成，当前仍有未处理差异。');
-    }, 650);
-  };
-
-  const handleAnomaly = (record: ReconciliationAnomaly) => {
-    modal.confirm({
-      title: `处理差异 ${record.id}`,
-      okText: '标记已处理',
-      cancelText: '取消',
-      content: (
-        <Descriptions
-          size="small"
-          column={1}
-          items={[
-            { key: 'type', label: '异常类型', children: record.type },
-            { key: 'po', label: 'SAP PO / Item', children: record.po },
-            { key: 'suggestion', label: '处理建议', children: record.suggestion },
-          ]}
-        />
-      ),
-      onOk: () => {
-        setResolvedIds((current) => [...new Set([...current, record.id])]);
-        message.success(`${record.id} 已标记为已处理。`);
-      },
-    });
-  };
-
-  const columns: TableColumnsType<ReconciliationAnomaly> = [
-    { title: '异常类型', dataIndex: 'type', width: 240 },
-    { title: 'SAP PO / Item', dataIndex: 'po', width: 180 },
-    { title: 'SAP凭证', dataIndex: 'document', width: 140 },
-    {
-      title: '风险',
-      dataIndex: 'severity',
-      width: 90,
-      render: (value: ReconciliationAnomaly['severity']) => (
-        <Tag color={value === '高' ? 'error' : 'warning'}>{value}</Tag>
-      ),
+  const { message } = App.useApp();
+  const client = useQueryClient();
+  const query = useQuery({ queryKey: sapKeys.all, queryFn: getSapExecutions });
+  const reconcile = useMutation({
+    mutationFn: reconcileSapExecution,
+    onSuccess: async (result) => {
+      await client.invalidateQueries({ queryKey: sapKeys.all });
+      message.warning(result.message);
     },
-    { title: '处理建议', dataIndex: 'suggestion' },
-    {
-      title: '处理状态',
-      key: 'status',
-      width: 110,
-      render: (_, record) =>
-        resolvedIds.includes(record.id) ? (
-          <Tag color="success" icon={<CheckCircleOutlined />}>已处理</Tag>
-        ) : (
-          <Tag>待处理</Tag>
-        ),
-    },
-    {
-      title: '操作',
-      width: 100,
-      render: (_, record) => (
-        <Button
-          type="link"
-          disabled={resolvedIds.includes(record.id)}
-          onClick={() => handleAnomaly(record)}
-        >
-          {resolvedIds.includes(record.id) ? '已完成' : '处理'}
-        </Button>
-      ),
-    },
+  });
+  const pending = useMemo(() => (query.data?.items ?? []).filter((item) => ['UNKNOWN', 'FAILED'].includes(item.status)), [query.data]);
+  const columns: TableColumnsType<SapExecution> = [
+    { title: '业务单号', dataIndex: 'businessDocumentNo', width: 180 },
+    { title: '业务动作', dataIndex: 'businessAction', width: 140, render: (value: SapExecution['businessAction']) => eventTypeMeta[value].label },
+    { title: 'SAP PO / Item', width: 180, render: (_, item) => `${item.sapPoNo || '未关联'} / ${item.itemNo || '—'}` },
+    { title: '状态', dataIndex: 'status', width: 130, render: (value: SapExecution['status']) => <StatusTag domain="sap" value={value} /> },
+    { title: 'SAP凭证', dataIndex: 'sapDocumentNo', width: 140, render: (value?: string) => value ?? '—' },
+    { title: '当前已知信息', dataIndex: 'errorSummary', render: (value?: string) => value ?? '请求结果未知，需要 SAP 查询证据' },
+    { title: '发生时间', dataIndex: 'executedAt', width: 170, render: formatDateTime },
+    { title: '下一步', key: 'action', width: 155, fixed: 'right', render: (_, item) => item.status === 'UNKNOWN'
+      ? <Button type="link" loading={reconcile.isPending} onClick={() => reconcile.mutate(item.id)}>查询 SAP 状态</Button>
+      : <Tag color="warning">确认原因后由接口通道处理</Tag> },
   ];
-
-  return (
-    <>
-      <PageHeader
-        title="SAP业务对账"
-        description="识别本地采购执行事实与 SAP 凭证状态之间的不一致，并提供可执行的处理建议。"
-        actions={(
-          <Button
-            type="primary"
-            icon={<SyncOutlined />}
-            loading={checking}
-            onClick={runReconciliation}
-          >
-            立即对账
-          </Button>
-        )}
-      />
-      <Alert
-        type="warning"
-        showIcon
-        title={`发现 ${anomalies.length - resolvedIds.length} 条需要处理的差异`}
-        description={(
-          <Typography.Text>
-            最近对账：{lastChecked}。对账处理不会直接重试业务过账；状态未知记录需先完成 SAP 状态核对。
-          </Typography.Text>
-        )}
-      />
-      <div className="content-surface reconciliation-table">
-        <Table
-          rowKey="id"
-          size="small"
-          dataSource={anomalies}
-          pagination={false}
-          columns={columns}
-        />
-      </div>
-    </>
-  );
+  if (query.isLoading) return <PageLoading />;
+  if (query.isError) return <PageError onRetry={() => query.refetch()} />;
+  return <>
+    <PageHeader title="SAP业务对账" description="集中查看失败和状态未知的本地执行记录，跟踪核对进度。" actions={<Button icon={<SyncOutlined />} loading={query.isFetching} onClick={() => query.refetch()}>刷新执行记录</Button>} />
+    <Alert type="warning" showIcon title="真实 SAP 查询接口尚未接入，目前不能确认凭证差异或将记录标记为已处理。" description={<Space direction="vertical" size={0}><Typography.Text>此处展示的是本地执行状态清单，不代表已完成 SAP 对账。</Typography.Text><Typography.Text>状态未知时只能查询 SAP；未获得可验证的 SAP 证据前，不自动转成功，也不允许重试。</Typography.Text></Space>} />
+    <div className="content-surface reconciliation-table"><Table rowKey="id" size="small" dataSource={pending} pagination={{ pageSize: 20 }} columns={columns} scroll={{ x: 1250 }} locale={{ emptyText: <Empty description="没有待核对或失败的执行记录" /> }} /></div>
+  </>;
 }

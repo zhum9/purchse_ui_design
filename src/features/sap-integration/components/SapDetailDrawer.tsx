@@ -17,7 +17,7 @@ export function SapDetailDrawer({ execution, open, onClose }: { execution?: SapE
     ]} /></section>
     <Collapse className="technical-collapse" items={[{ key: 'technical', label: '技术信息（接口运维可见）', children: <Descriptions size="small" column={1} items={[
       { key: 'request', label: '业务请求ID', children: execution.requestId }, { key: 'code', label: '技术错误码', children: execution.technicalCode ?? '-' },
-      { key: 'interface', label: '接口通道', children: 'SAP Adapter / OData' }, { key: 'raw', label: '原始返回摘要', children: <Typography.Text code>{execution.errorSummary ?? 'Execution completed successfully.'}</Typography.Text> },
+      { key: 'interface', label: '接口通道', children: '原型未配置真实 SAP 通道' }, { key: 'raw', label: '返回摘要', children: <Typography.Text code>{execution.errorSummary ?? '无接口返回数据'}</Typography.Text> },
     ]} /> }]} />
   </Drawer>;
 }

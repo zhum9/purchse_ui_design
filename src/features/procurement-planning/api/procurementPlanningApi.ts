@@ -28,7 +28,7 @@ export interface DemandLineInput {
   specification?: string;
   quantity: number;
   unit: string;
-  estimatedUnitPrice: number;
+  estimatedUnitPrice?: number;
   requiredDate: string;
   plant?: string;
 }
@@ -48,6 +48,10 @@ export interface DemandUpsertInput {
 }
 
 export interface PlanCreateInput {
+  requestKey?: string;
+  submit?: boolean;
+  sourceQuantities?: Record<string, string>;
+  independentLines?: DemandLineInput[];
   name: string;
   type: ProcurementPlanType;
   purchaseOrganization: string;
@@ -102,7 +106,9 @@ export const getProcurementPlans = (query: PlanningQuery) =>
 export const getProcurementPlan = (id: string) => apiClient<ProcurementPlan>(`/api/procurement-plans/${id}`);
 
 export const createProcurementPlan = (input: PlanCreateInput) =>
-  apiClient<ProcurementPlan>('/api/procurement-plans', { method: 'POST', body: JSON.stringify(input) });
+  apiClient<ProcurementPlan>('/api/procurement-plans', { method: 'POST', body: JSON.stringify({ ...input, requestKey: input.requestKey ?? crypto.randomUUID() }) });
+
+export const submitProcurementPlan = (id: string) => apiClient<ProcurementPlan>(`/api/procurement-plans/${id}/submit`, { method: 'POST' });
 
 export const approveProcurementPlan = (id: string) =>
   apiClient<ProcurementPlan>(`/api/procurement-plans/${id}/approve`, { method: 'POST' });
