@@ -7,11 +7,12 @@ import type { ExecutionEvent } from '@domain/procurement/types';
 import { apiClient } from '@shared/api/client';
 import { PageError, PageLoading } from '@shared/components/PageState';
 import { eventTypeMeta } from '@domain/procurement/meta';
+import { createClientId } from '@shared/utils/id';
 
 export function ReverseOperationDrawer({ event, action, open, onClose }: { event?: ExecutionEvent; action: ReverseAction; open: boolean; onClose: () => void }) {
   const { modal, message } = App.useApp(), client = useQueryClient();
   const [form] = Form.useForm<{ quantity: string; businessDate: Dayjs; reason: string; replacementRequired?: boolean }>();
-  const [requestKey, setRequestKey] = useState(() => crypto.randomUUID());
+  const [requestKey, setRequestKey] = useState(() => createClientId());
   const query = useQuery({ queryKey: ['reverse-context', event?.id], queryFn: () => apiClient<ReverseContext>(`/api/executions/${event!.id}/reverse-context`), enabled: Boolean(event && open) });
   const mutation = useMutation({ mutationFn: (input: object) => apiClient<ExecutionEvent>(`/api/executions/${event!.id}/reverse`, { method: 'POST', body: JSON.stringify(input) }) });
   const context = query.data, returnAction = action === 'PURCHASE_RETURN';
@@ -28,7 +29,7 @@ export function ReverseOperationDrawer({ event, action, open, onClose }: { event
       <Descriptions className="drawer-descriptions" column={2} items={[{ key: 'original', label: '原执行单', children: event?.businessDocumentNo }, { key: 'item', label: '原订单 / 行ID', children: `${event?.poId} / ${event?.itemId}` }, { key: 'qty', label: '原数量 / 金额', children: `${context.originalValue} ${context.unit}` }, { key: 'effective', label: '已生效反向净额', children: `${context.effectiveReversed} ${context.unit}` }, { key: 'pending', label: '反向处理中', children: `${context.pending} ${context.unit}` }, { key: 'available', label: '当前可反向', children: `${context.available} ${context.unit}` }]} />
       <Alert className="editor-section" showIcon type={context.blockedReason ? 'warning' : 'info'} title={context.blockedReason ?? '内置样例具备演示依赖快照；不代表已查询真实库存或发票。'} />
       {mutation.isError && <Alert type="error" showIcon title={mutation.error.message} />}
-      <Form form={form} layout="vertical" initialValues={{ businessDate: dayjs(), replacementRequired: true }} onValuesChange={() => setRequestKey(crypto.randomUUID())}>
+      <Form form={form} layout="vertical" initialValues={{ businessDate: dayjs(), replacementRequired: true }} onValuesChange={() => setRequestKey(createClientId())}>
         {returnAction && <Form.Item name="quantity" label="本次退货数量" rules={[{ required: true }]}><InputNumber<string> stringMode min="0.000001" max={String(context.available)} suffix={context.unit} /></Form.Item>}
         {!returnAction && <Alert className="editor-section" type="warning" title="按完整原执行行冲销；若已部分退货或存在其他占用，当前不可整笔冲销。" />}
         <Form.Item name="businessDate" label="业务日期" rules={[{ required: true }]}><DatePicker /></Form.Item>

@@ -11,6 +11,7 @@ import type { PurchaseOrderItem } from '@domain/procurement/types';
 import { DynamicForm } from '@shared/components/DynamicForm';
 import { formatMoney, formatQuantity } from '@shared/utils/format';
 import { saveDraft } from '@shared/utils/draft';
+import { createClientId } from '@shared/utils/id';
 import { submitExecution } from '../api/fulfillmentApi';
 
 interface ExecutionDrawerProps {
@@ -22,7 +23,7 @@ interface ExecutionDrawerProps {
 export function ExecutionDrawer({ item, open, onClose }: ExecutionDrawerProps) {
   const { message } = App.useApp();
   const client = useQueryClient();
-  const [requestKey, setRequestKey] = useState(() => crypto.randomUUID());
+  const [requestKey, setRequestKey] = useState(() => createClientId());
   const [form] = Form.useForm<ExecutionFormValues>();
   const [values, setValues] = useState<ExecutionFormValues>({});
   const [completed, setCompleted] = useState<{ no: string }>();
@@ -81,7 +82,7 @@ export function ExecutionDrawer({ item, open, onClose }: ExecutionDrawerProps) {
           )}
           {mutation.isError && <Alert className="editor-section" type="error" showIcon title={mutation.error.message} />}
           {executionBlockReason(item) && <Alert type="warning" showIcon title={executionBlockReason(item)} />}
-          <DynamicForm schema={schema} form={form} onValuesChange={(next) => { setValues(next); setRequestKey(crypto.randomUUID()); }} />
+          <DynamicForm schema={schema} form={form} onValuesChange={(next) => { setValues(next); setRequestKey(createClientId()); }} />
           <Alert icon={<CheckCircleOutlined />} showIcon type="success" title="提交后将生成独立执行事件，SAP 处理结果可在执行监控中查看。" />
         </>
       )}

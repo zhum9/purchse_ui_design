@@ -2,6 +2,7 @@ import Decimal from 'decimal.js';
 import dayjs from 'dayjs';
 import { catalog } from './catalog';
 import type { CommercialLine, LineAmounts, OrderDraft, ValidationIssue } from './types';
+import { createClientId } from '@shared/utils/id';
 
 export const decimal = (value?: string | number | null) => new Decimal(value ?? 0);
 export const positive = (value?: string) => value !== undefined && /^\d+(\.\d+)?$/.test(value) && decimal(value).gt(0);
@@ -76,7 +77,7 @@ export function validateOrder(draft: OrderDraft): ValidationIssue[] {
 }
 
 export function newCommercialLine(): CommercialLine {
-  return { lineId: crypto.randomUUID(), lineNo: '', productKind: 'GOODS', stockMode: 'NON_STOCK', identificationMode: 'FREE_TEXT', content: '', specification: '', executionScenario: 'MAT_FREE', pricingMethod: 'UNIT_PRICE', controlMode: 'QUANTITY', originMode: 'DIRECT', priceQuantity: '1', priceInputBasis: 'GROSS', amountBasis: 'GROSS', taxConfirmed: false, priceConfirmed: false, isFree: false, freeReason: '', serviceStart: '', serviceEnd: '', acceptanceCriteria: '', schedule: { scheduleKey: crypto.randomUUID(), requiredDate: '', addressSnapshot: '' } };
+  return { lineId: createClientId(), lineNo: '', productKind: 'GOODS', stockMode: 'NON_STOCK', identificationMode: 'FREE_TEXT', content: '', specification: '', executionScenario: 'MAT_FREE', pricingMethod: 'UNIT_PRICE', controlMode: 'QUANTITY', originMode: 'DIRECT', priceQuantity: '1', priceInputBasis: 'GROSS', amountBasis: 'GROSS', taxConfirmed: false, priceConfirmed: false, isFree: false, freeReason: '', serviceStart: '', serviceEnd: '', acceptanceCriteria: '', schedule: { scheduleKey: createClientId(), requiredDate: '', addressSnapshot: '' } };
 }
 export function newOrderDraft(): OrderDraft {
   return { companyId: '100', buyerId: '801', currencyCode: 'CNY', orderDate: dayjs().format('YYYY-MM-DD'), procurementReason: '', notes: '', lines: [] };

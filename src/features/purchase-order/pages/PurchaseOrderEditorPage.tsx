@@ -8,6 +8,7 @@ import { refName } from '@domain/purchase-order/catalog';
 import type { OrderDraft } from '@domain/purchase-order/types';
 import { PageHeader } from '@shared/components/PageHeader';
 import { PageError, PageLoading } from '@shared/components/PageState';
+import { createClientId } from '@shared/utils/id';
 import { getPurchaseOrder, purchaseOrderKeys } from '../api/purchaseOrderApi';
 import { getOrderSourceDraft, orderDraftKeys, saveOrderDraft } from '../api/orderDraftApi';
 import { CommercialLineEditor } from '../components/CommercialLineEditor';
@@ -24,7 +25,7 @@ export function PurchaseOrderEditorPage() {
   const [step, setStep] = useState(kind ? 0 : 1);
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState('');
-  const [requestKey, setRequestKey] = useState(() => crypto.randomUUID());
+  const [requestKey, setRequestKey] = useState(() => createClientId());
   const query = useQuery({ queryKey: purchaseOrderKeys.detail(id ?? ''), queryFn: () => getPurchaseOrder(id!), enabled: Boolean(id) });
   const sourceQuery = useQuery({ queryKey: orderDraftKeys.source(kind, sourceIds), queryFn: () => getOrderSourceDraft(kind, sourceIds), enabled: Boolean(kind && !id) });
   const mutation = useMutation({ mutationFn: saveOrderDraft });
@@ -40,7 +41,7 @@ export function PurchaseOrderEditorPage() {
     }
   }, [blocker, modal]);
   useBeforeUnload((event) => { if (dirty) { event.preventDefault(); event.returnValue = ''; } });
-  const update = (next: OrderDraft) => { setDraft(next); setDirty(true); setRequestKey(crypto.randomUUID()); };
+  const update = (next: OrderDraft) => { setDraft(next); setDirty(true); setRequestKey(createClientId()); };
   const totals = orderTotals(draft), issues = validateOrder(draft), errors = issues.filter((issue) => issue.level === 'ERROR');
   const save = async (submit: boolean) => {
     setError('');

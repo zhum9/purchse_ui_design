@@ -7,6 +7,7 @@ import { revisionMeta } from '@domain/purchase-order/status';
 import { moneyText, orderTotals } from '@domain/purchase-order/rules';
 import { refName } from '@domain/purchase-order/catalog';
 import { executeOrderAction } from '../api/orderDraftApi';
+import { createClientId } from '@shared/utils/id';
 
 export function OrderLifecyclePanel({ order }: { order: OrderDocument }) {
   const client = useQueryClient(), navigate = useNavigate();
@@ -14,7 +15,7 @@ export function OrderLifecyclePanel({ order }: { order: OrderDocument }) {
   const [actorId, setActorId] = useState('801'), [reason, setReason] = useState(''), [error, setError] = useState('');
   const revision = order.revisions.find((entry) => entry.id === order.workingRevisionId);
   const effective = order.revisions.find((entry) => entry.id === order.effectiveRevisionId);
-  const mutation = useMutation({ mutationFn: (action: OrderActionCommand['action']) => executeOrderAction(order.id, { requestKey: crypto.randomUUID(), expectedRowVersion: order.rowVersion, action, actorId, reason }) });
+  const mutation = useMutation({ mutationFn: (action: OrderActionCommand['action']) => executeOrderAction(order.id, { requestKey: createClientId(), expectedRowVersion: order.rowVersion, action, actorId, reason }) });
   const act = (action: OrderActionCommand['action']) => modal.confirm({ title: ({ APPROVE: '批准当前提交版本？', REJECT: '驳回当前版本？', WITHDRAW: '撤回审批并释放本次占用？', SIMULATE_ERP: '仅在本机模拟 ERP 已确认？', CHANGE: '发起约定交期变更？', REVISE: '新建编制版本？' })[action], content: action === 'SIMULATE_ERP' ? '本操作不会调用真实 SAP，仅用于原型走查。正式环境必须由匹配请求版本的 ERP 结果驱动。' : '正式历史版本保持不变；当前版本和来源余额将重新校验。', onOk: async () => { try { const result = await mutation.mutateAsync(action); await client.invalidateQueries(); message.success('业务状态已更新。'); if (['CHANGE', 'REVISE'].includes(action)) navigate(`/purchase-orders/${result.id}/edit`); } catch (cause) { setError(cause instanceof Error ? cause.message : '操作失败'); } } });
   const diff = revision && effective ? revision.content.lines.flatMap((line) => {
     const old = effective.content.lines.find((entry) => entry.lineId === line.lineId);

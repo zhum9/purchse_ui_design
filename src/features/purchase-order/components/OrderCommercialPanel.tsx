@@ -5,6 +5,7 @@ import type { Dayjs } from 'dayjs';
 import type { CommercialLine, OrderDocument } from '@domain/purchase-order/types';
 import { calculateLine, moneyText } from '@domain/purchase-order/rules';
 import { refName } from '@domain/purchase-order/catalog';
+import { createClientId } from '@shared/utils/id';
 import { saveDeliveryNote } from '../api/orderDraftApi';
 
 export function OrderCommercialPanel({ order }: { order: OrderDocument }) {
@@ -14,7 +15,7 @@ export function OrderCommercialPanel({ order }: { order: OrderDocument }) {
   const [form] = Form.useForm<{ date?: Dayjs; note: string }>();
   const mutation = useMutation({ mutationFn: async () => {
     const values = await form.validateFields();
-    return saveDeliveryNote(order.id, { requestKey: crypto.randomUUID(), expectedRowVersion: order.rowVersion, revisionId: revision.id, lineId: selected!.lineId, expectedArrivalDate: values.date?.format('YYYY-MM-DD'), note: values.note ?? '' });
+    return saveDeliveryNote(order.id, { requestKey: createClientId(), expectedRowVersion: order.rowVersion, revisionId: revision.id, lineId: selected!.lineId, expectedArrivalDate: values.date?.format('YYYY-MM-DD'), note: values.note ?? '' });
   }, onSuccess: async () => { setSelected(undefined); form.resetFields(); await client.invalidateQueries(); } });
   return <div className="content-surface"><Descriptions column={3} items={[
     { key: 'payment', label: '付款条件', children: refName('paymentTerms', revision.content.paymentTermId) }, { key: 'delivery', label: '交付条件', children: refName('deliveryTerms', revision.content.deliveryTermId) }, { key: 'buyer', label: '采购员', children: refName('users', revision.content.buyerId) },

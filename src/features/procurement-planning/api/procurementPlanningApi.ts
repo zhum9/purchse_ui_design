@@ -10,6 +10,7 @@ import type {
 } from '@domain/procurement/types';
 import { apiClient } from '@shared/api/client';
 import type { PageResult } from '@shared/api/types';
+import { createClientId } from '@shared/utils/id';
 
 export interface PlanningQuery {
   keyword?: string;
@@ -106,7 +107,7 @@ export const getProcurementPlans = (query: PlanningQuery) =>
 export const getProcurementPlan = (id: string) => apiClient<ProcurementPlan>(`/api/procurement-plans/${id}`);
 
 export const createProcurementPlan = (input: PlanCreateInput) =>
-  apiClient<ProcurementPlan>('/api/procurement-plans', { method: 'POST', body: JSON.stringify({ ...input, requestKey: input.requestKey ?? crypto.randomUUID() }) });
+  apiClient<ProcurementPlan>('/api/procurement-plans', { method: 'POST', body: JSON.stringify({ ...input, requestKey: input.requestKey ?? createClientId() }) });
 
 export const submitProcurementPlan = (id: string) => apiClient<ProcurementPlan>(`/api/procurement-plans/${id}/submit`, { method: 'POST' });
 
