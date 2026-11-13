@@ -79,7 +79,7 @@ export function AppLayout() {
           <Flex align="center" justify="space-between">
             <Space size={16}>
               <Button type="text" aria-label={collapsed ? '展开导航' : '收起导航'} icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />} onClick={() => setCollapsed(!collapsed)} />
-              <Select value="北方粮食集团" variant="borderless" suffixIcon={<ApartmentOutlined />} options={[{ value: '北方粮食集团', label: '北方粮食集团' }]} />
+              <Select value="中粮集团" variant="borderless" suffixIcon={<ApartmentOutlined />} options={[{ value: '中粮集团', label: '中粮集团' }]} />
             </Space>
             <Space size={18}>
               <Tag className="prototype-tag">本机原型 · 非共享数据</Tag>
